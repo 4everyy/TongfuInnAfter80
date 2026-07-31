@@ -1,0 +1,26 @@
+node_modules
+dist
+coverage
+.vite
+*.local
+*.tsbuildinfo
+vite-dev*.log
+
+# Local visual QA browser files (kept on drive D)
+outputs/wechat-devtools/**/browser-profile/
+outputs/wechat-devtools/**/browser-cache/
+outputs/wechat-devtools/**/browser-temp/
+outputs/wechat-devtools/**/preview-bundle.js
+outputs/wechat-devtools/**/preview.html
+
+# Unity generated files
+unity/[Ll]ibrary/
+unity/[Tt]emp/
+unity/[Oo]bj/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Ll]ogs/
+unity/[Uu]ser[Ss]ettings/
+unity/MemoryCaptures/
+unity/*.csproj
+unity/*.sln

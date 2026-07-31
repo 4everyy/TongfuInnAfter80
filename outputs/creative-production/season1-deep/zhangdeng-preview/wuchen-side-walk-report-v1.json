@@ -1,0 +1,116 @@
+{
+  "sourceSize": [
+    1774,
+    887
+  ],
+  "frameSize": [
+    192,
+    256
+  ],
+  "pivot": [
+    96,
+    244
+  ],
+  "frames": [
+    {
+      "frame": 0,
+      "bbox": [
+        36,
+        12,
+        157,
+        244
+      ],
+      "width": 121,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 1,
+      "bbox": [
+        41,
+        12,
+        152,
+        244
+      ],
+      "width": 111,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 2,
+      "bbox": [
+        32,
+        12,
+        161,
+        244
+      ],
+      "width": 129,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 3,
+      "bbox": [
+        41,
+        12,
+        152,
+        244
+      ],
+      "width": 111,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 4,
+      "bbox": [
+        36,
+        12,
+        156,
+        244
+      ],
+      "width": 120,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 5,
+      "bbox": [
+        41,
+        12,
+        151,
+        244
+      ],
+      "width": 110,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 6,
+      "bbox": [
+        33,
+        12,
+        160,
+        244
+      ],
+      "width": 127,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 7,
+      "bbox": [
+        41,
+        12,
+        152,
+        244
+      ],
+      "width": 111,
+      "height": 232,
+      "footY": 244
+    }
+  ],
+  "baselineDriftPx": 0,
+  "heightVariationPct": 0.0,
+  "widthVariationPct": 14.73,
+  "output": "outputs\\creative-production\\season1-deep\\zhangdeng-preview\\wuchen-side-walk-strip-v1.png"
+}

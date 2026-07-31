@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-07-28T06:44:00.751Z",
+  "maps": [
+    {
+      "id": "jiangnan_spice_workshop",
+      "source": "D:\\AI\\design-assets\\dengxia\\season2-ch11\\sources\\spice-workshop-source.png",
+      "target": "D:\\TongfuInnAfter80\\minigame\\subpackages\\s2ch11\\assets\\art\\maps\\jiangnan_spice_workshop\\far.jpg",
+      "size": [
+        1260,
+        560
+      ],
+      "bytes": 167682
+    },
+    {
+      "id": "old_banquet_kitchen",
+      "source": "D:\\AI\\design-assets\\dengxia\\season2-ch11\\sources\\old-kitchen-source.png",
+      "target": "D:\\TongfuInnAfter80\\minigame\\subpackages\\s2ch11\\assets\\art\\maps\\old_banquet_kitchen\\far.jpg",
+      "size": [
+        1320,
+        560
+      ],
+      "bytes": 163285
+    }
+  ],
+  "props": [
+    {
+      "id": "problem-spice-sack",
+      "target": "D:\\TongfuInnAfter80\\minigame\\subpackages\\s2ch11\\assets\\art\\props\\problem-spice-sack.png",
+      "size": [
+        220,
+        220
+      ],
+      "bytes": 60247
+    },
+    {
+      "id": "charred-recipe",
+      "target": "D:\\TongfuInnAfter80\\minigame\\subpackages\\s2ch11\\assets\\art\\props\\charred-recipe.png",
+      "size": [
+        220,
+        220
+      ],
+      "bytes": 52904
+    },
+    {
+      "id": "banquet-cauldron",
+      "target": "D:\\TongfuInnAfter80\\minigame\\subpackages\\s2ch11\\assets\\art\\props\\banquet-cauldron.png",
+      "size": [
+        280,
+        220
+      ],
+      "bytes": 82466
+    }
+  ],
+  "actions": {
+    "id": "shiwei-chapter11-actions",
+    "target": "D:\\TongfuInnAfter80\\minigame\\subpackages\\s2ch11\\assets\\art\\characters\\shiwei\\chapter11-actions.png",
+    "size": [
+      720,
+      320
+    ],
+    "bytes": 244482
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "atlas": "outputs\\creative-production\\season1-deep\\wuchen-side-atlas-v5.png",
+  "size": [
+    1536,
+    768
+  ],
+  "frameSize": [
+    192,
+    256
+  ],
+  "pivot": [
+    96,
+    244
+  ],
+  "frameCount": 19,
+  "baselineDriftPx": 0,
+  "heightVariationPct": 0.0,
+  "frames": [
+    {
+      "frame": 0,
+      "width": 72,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 1,
+      "width": 76,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 2,
+      "width": 84,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 3,
+      "width": 72,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 4,
+      "width": 126,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 5,
+      "width": 99,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 6,
+      "width": 137,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 7,
+      "width": 133,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 8,
+      "width": 123,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 9,
+      "width": 131,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 10,
+      "width": 137,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 11,
+      "width": 126,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 12,
+      "width": 109,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 13,
+      "width": 165,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 14,
+      "width": 180,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 15,
+      "width": 85,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 16,
+      "width": 182,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 17,
+      "width": 148,
+      "height": 232,
+      "footY": 244
+    },
+    {
+      "frame": 18,
+      "width": 147,
+      "height": 232,
+      "footY": 244
+    }
+  ]
+}

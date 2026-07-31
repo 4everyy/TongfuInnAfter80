@@ -1,0 +1,103 @@
+{
+  "4": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "DreamShaper_8_pruned.safetensors"
+    }
+  },
+  "13": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "tongfu-inn-hall-guide.png"
+    }
+  },
+  "14": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": ["13", 0],
+      "upscale_method": "lanczos",
+      "width": 512,
+      "height": 320,
+      "crop": "disabled"
+    }
+  },
+  "15": {
+    "class_type": "VAEEncode",
+    "inputs": {
+      "pixels": ["14", 0],
+      "vae": ["4", 2]
+    }
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "high quality 2d game background, Chinese animated film interior, clean hand-drawn linework, crisp cel-painted edges, eye-level orthographic side view of a warm ancient inn hall, horizontal side-scrolling scene, exposed wooden beams, counter, round tables, staircase, paper windows, detailed wood grain, muted warm wood, jade green and restrained cinnabar accents, readable architecture, clear empty walking lane at bottom, sharp focus, no people, no text",
+      "clip": ["4", 1]
+    }
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "exterior, outdoor, building facade, roof view, aerial view, top-down view, isometric, photo, photorealistic, 3d render, neon, oversaturated, bloom, blur, soft focus, depth of field, watercolor wash, dark horror, watermark, logo, text, people, malformed architecture, distorted perspective",
+      "clip": ["4", 1]
+    }
+  },
+  "3": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": 20260713,
+      "steps": 28,
+      "cfg": 6.5,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 0.70,
+      "model": ["4", 0],
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "latent_image": ["15", 0]
+    }
+  },
+  "10": {
+    "class_type": "LatentUpscale",
+    "inputs": {
+      "samples": ["3", 0],
+      "upscale_method": "bislerp",
+      "width": 1024,
+      "height": 640,
+      "crop": "disabled"
+    }
+  },
+  "11": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": 20260713,
+      "steps": 16,
+      "cfg": 6.0,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 0.40,
+      "model": ["4", 0],
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "latent_image": ["10", 0]
+    }
+  },
+  "12": {
+    "class_type": "VAEDecodeTiled",
+    "inputs": {
+      "samples": ["11", 0],
+      "vae": ["4", 2],
+      "tile_size": 512,
+      "overlap": 64,
+      "temporal_size": 64,
+      "temporal_overlap": 8
+    }
+  },
+  "9": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "tongfu_guided_final",
+      "images": ["12", 0]
+    }
+  }
+}
