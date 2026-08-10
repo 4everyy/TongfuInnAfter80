@@ -1,5 +1,7 @@
 const { maps, chapter, deepChapters } = require('../../data/content');
 const doorwayCrisis = require('../../data/doorway-crisis');
+const presentation = require('../../data/presentation');
+const branches = require('../inn/branches');
 
 const MOVE_SPEED = 150;
 const COLLISION_RADIUS = 14;
@@ -38,46 +40,15 @@ function conditionsMet(item, state) {
 function ensureMapAccess(state) {
   if (!state.visitedMaps || typeof state.visitedMaps !== 'object') state.visitedMaps = {};
   if (!state.unlockedMaps || typeof state.unlockedMaps !== 'object') state.unlockedMaps = {};
-  ['inn', 'yard', 'street'].forEach((id) => { state.unlockedMaps[id] = true; });
+  maps.forEach((item) => {
+    state.unlockedMaps[item.id] = true;
+  });
   return state.unlockedMaps;
-}
-
-function gateOpen(state, gate) {
-  if (!gate) return true;
-  if (gate === 'town-core') {
-    return !!state.flags.doorwayDisturbanceResolved
-      || !!state.flags['mission-accepted']
-      || !!(state.campaign && state.campaign.chapter >= 2);
-  }
-  if (gate === 'late-letter') {
-    return !!state.flags['mission-accepted']
-      || !!state.flags['chapter-late-letter-complete']
-      || !!(state.campaign && state.campaign.chapter >= 3);
-  }
-  return false;
 }
 
 function syncMapAccess(state) {
   const unlocked = ensureMapAccess(state);
-  let changed = true;
   unlocked[state.mapId || 'inn'] = true;
-  if (gateOpen(state, 'town-core')) {
-    ['locust_lane', 'tea_shed', 'east_gate'].forEach((id) => { unlocked[id] = true; });
-  }
-  if (gateOpen(state, 'late-letter')) unlocked.stone_bridge = true;
-  while (changed) {
-    changed = false;
-    maps.forEach((sourceMap) => {
-      if (!unlocked[sourceMap.id]) return;
-      sourceMap.exits.forEach((exit) => {
-        if (unlocked[exit.target]) return;
-        if (gateOpen(state, exit.mapGate) && conditionsMet(exit, state)) {
-          unlocked[exit.target] = true;
-          changed = true;
-        }
-      });
-    });
-  }
   return unlocked;
 }
 
@@ -155,13 +126,35 @@ function ellipseIntersectsPolygon(position, radius, polygon) {
   return false;
 }
 
+function npcPresent(npc, state) {
+  const party = state && Array.isArray(state.party) ? state.party : [];
+  if (!state || !conditionsMet(npc, state)) return false;
+  if (npc.hideWhenInParty && party.indexOf(npc.roleId) >= 0) return false;
+  if (npc.roleId && party.indexOf(npc.roleId) >= 0) return false;
+  return true;
+}
+
+function ellipseIntersectsNpc(position, radius, npc) {
+  const shape = collisionShape(radius);
+  const combinedX = shape.x + Math.max(8, Number(npc.collisionRadiusX) || 14);
+  const combinedY = shape.y + Math.max(5, Number(npc.collisionRadiusY) || 7);
+  const x = (position.x - npc.x) / combinedX;
+  const y = (position.y - npc.y) / combinedY;
+  return x * x + y * y <= 1;
+}
+
 function isWalkable(current, position, radius, state) {
   const samples = collisionSamples(position, radius);
   const insideFloor = samples.every((sample) => current.walkable.some((polygon) => pointInPolygon(sample, polygon)));
   if (!insideFloor) return false;
-  return !current.obstacles.some((obstacle) => {
+  const blockedByObstacle = current.obstacles.some((obstacle) => {
     if (state && !conditionsMet(obstacle, state)) return false;
     return ellipseIntersectsPolygon(position, radius, obstacle.polygon);
+  });
+  if (blockedByObstacle) return false;
+  if (!state) return true;
+  return !(current.npcs || []).some((npc) => {
+    return npc.blocksMovement !== false && npcPresent(npc, state) && ellipseIntersectsNpc(position, radius, npc);
   });
 }
 
@@ -189,6 +182,7 @@ function interactionState(state, spot) {
 
 function discoverableHotspots(state) {
   return visibleHotspots(state)
+    .filter((spot) => !spot.linkedObjectId)
     .map((spot) => ({
       spot,
       status: interactionState(state, spot),
@@ -206,12 +200,21 @@ function discoverableHotspots(state) {
 }
 
 function visibleNpcs(state) {
-  return map(state.mapId).npcs.filter((npc) => {
-    if (!conditionsMet(npc, state)) return false;
-    if (npc.hideWhenInParty && state.party.indexOf(npc.roleId) >= 0) return false;
-    if (npc.roleId && state.party.indexOf(npc.roleId) >= 0) return false;
-    return true;
-  });
+  var phase = state.worldTime && state.worldTime.phase;
+  return map(state.mapId).npcs
+    .filter((npc) => npcPresent(npc, state))
+    .map((npc) => {
+      // B4 时段站位：若配置 schedule[phase]，返回视觉坐标覆盖版（不修改原数据，不影响碰撞）
+      if (npc.schedule && phase && npc.schedule[phase]) {
+        var slot = npc.schedule[phase];
+        return Object.assign({}, npc, {
+          x: typeof slot.x === 'number' ? slot.x : npc.x,
+          y: typeof slot.y === 'number' ? slot.y : npc.y,
+          facing: slot.facing || npc.facing,
+        });
+      }
+      return npc;
+    });
 }
 
 function activeHotspot(state) {
@@ -253,7 +256,7 @@ function syncQuest(state) {
     : { title: active ? active.title : chapter.title, text: active ? '本章线索已经齐全，返回客栈完成结算。' : '迟到的驿信已经查清。回客栈经营，等待下一页线索。', stepId: 'complete' };
 }
 
-function spawn(state, mapId, spawnId, toast) {
+function applySpawn(state, mapId, spawnId, toast) {
   const target = map(mapId);
   const point = target.spawns[spawnId] || target.spawns.main;
   ensureMapAccess(state);
@@ -271,7 +274,72 @@ function spawn(state, mapId, spawnId, toast) {
   state.trail = [];
   state.followers = {};
   state.exitCooldown = 0.55;
+  state.exitRearmMapId = target.id;
   if (toast) state.toast = toast;
+}
+
+function spawn(state, mapId, spawnId, toast) {
+  state.sceneTransition = null;
+  state.lastSceneRoute = null;
+  applySpawn(state, mapId, spawnId, toast);
+}
+
+function beginTransition(state, exit) {
+  var visual;
+  var current;
+  if (!exit || state.sceneTransition) return false;
+  current = map(state.mapId);
+  visual = presentation.transition(current.id, exit.target);
+  state.sceneTransition = {
+    kind: exit.transition && exit.transition.kind || visual.kind,
+    duration: exit.transition && exit.transition.duration || visual.duration,
+    switchAt: exit.transition && exit.transition.switchAt || visual.switchAt,
+    startedAt: Date.now(),
+    switched: false,
+    direction: exit.zone.x + exit.zone.width / 2 < current.width / 2 ? 'left' : 'right',
+    from: {
+      mapId: state.mapId,
+      spawnId: state.spawnId,
+      position: { x: state.position.x, y: state.position.y },
+      facing: state.facing,
+    },
+    targetMapId: exit.target,
+    targetSpawnId: exit.spawn,
+    targetBranchId: exit.branchId || null,
+    toast: `来到${map(exit.target).name}`,
+  };
+  state.lastSceneRoute = state.sceneTransition;
+  state.moving = false;
+  state.velocity = { x: 0, y: 0 };
+  return true;
+}
+
+function updateTransition(state) {
+  var active = state.sceneTransition;
+  var progress;
+  if (!active) return false;
+  progress = Math.max(0, (Date.now() - active.startedAt) / active.duration);
+  if (!active.switched && progress >= active.switchAt) {
+    active.switched = true;
+    if (active.targetBranchId) {
+      branches.unlock(state, active.targetBranchId);
+      branches.switchTo(state, active.targetBranchId);
+    }
+    applySpawn(state, active.targetMapId, active.targetSpawnId, active.toast);
+  }
+  if (progress >= 1) state.sceneTransition = null;
+  return true;
+}
+
+function rollbackTransition(state) {
+  var active = state.sceneTransition || state.lastSceneRoute;
+  if (!active || !active.from) return false;
+  applySpawn(state, active.from.mapId, active.from.spawnId, '目标场景暂未加载，已返回原处。');
+  state.position = { x: active.from.position.x, y: active.from.position.y };
+  state.facing = active.from.facing;
+  state.sceneTransition = null;
+  state.lastSceneRoute = null;
+  return true;
 }
 
 function resetTrail(state) {
@@ -355,8 +423,15 @@ function blockedExitMessage(state, exit) {
 }
 
 function checkExits(state, current) {
-  if (state.exitCooldown > 0) return;
   const exit = current.exits.find((item) => inZone(state.position, item.zone));
+  if (state.exitRearmMapId === current.id) {
+    if (exit) {
+      state.blockedExitId = null;
+      return;
+    }
+    state.exitRearmMapId = null;
+  }
+  if (state.exitCooldown > 0 || state.sceneTransition) return;
   if (!exit) {
     state.blockedExitId = null;
     return;
@@ -367,7 +442,7 @@ function checkExits(state, current) {
     return;
   }
   state.blockedExitId = null;
-  spawn(state, exit.target, exit.spawn, `来到${map(exit.target).name}`);
+  beginTransition(state, exit);
 }
 
 function moveWithCollision(current, position, delta, state) {
@@ -404,7 +479,18 @@ function update(state, controls, delta) {
   state.activeId = 'zhangdeng';
   state.exitCooldown = Math.max(0, (state.exitCooldown || 0) - delta);
 
-  if (state.mode !== 'explore' || state.modal || state.dialogue || state.battle) {
+  if (updateTransition(state)) {
+    state.moving = false;
+    state.velocity = { x: 0, y: 0 };
+    updateFollowers(state);
+    return;
+  }
+
+  if (state.mode !== 'explore'
+    || state.modal
+    || state.dialogue
+    || state.battle
+    || state.visualTransition && Date.now() < state.visualTransition.startedAt + state.visualTransition.duration) {
     state.moving = false;
     state.velocity = { x: 0, y: 0 };
     updateFollowers(state);
@@ -458,6 +544,8 @@ module.exports = {
   activeHotspot,
   syncQuest,
   spawn,
+  beginTransition,
+  rollbackTransition,
   resetTrail,
   moveWithCollision,
   update,

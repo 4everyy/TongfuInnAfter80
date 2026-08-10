@@ -89,3 +89,15 @@
 - 场景背景保留底部至少 22% 的可走区域；关键设施不得烘焙主角。
 - 小屏缩放后，互动设施在 `320px` 逻辑宽度下仍至少具有 44px 点击命中区。
 - 导入前记录源文件、模型、提示词、日期和许可到 `D:\AI\TongfuInnAfter80\art-source\` 对应类别。
+
+## 2026-08-03 场景精修 v23
+
+- Creative Production 面板：`3c8d45a9-cc54-4953-b929-c20701dab745`，登记完成时 revision `95`。
+- 生成方式：Codex ImageGen 制作无文字、无人物的剧情道具源表；确定性脚本负责色键去背、边缘去色、裁切、前景提取、光照生成和压缩。
+- 源图：
+  - `D:\AI\design-assets\dengxia\scene-v23\source\core-props-chroma-v23.png`
+  - `D:\AI\design-assets\dengxia\scene-v23\source\s1-props-chroma-v23.png`
+  - `D:\AI\design-assets\dengxia\scene-v23\source\s2-props-chroma-v23.png`
+- 运行资源：`minigame/subpackages/scene-core-v23`、`scene-s1-v23`、`scene-s2-v23`。
+- 生成约束：原创手绘国风动画感、无中文、无演员肖像、无电视剧截图、透明可分层、符合既有地图透视与暖灯可读夜景。
+- 运行包只保留压缩后的 PNG/WebP；源图、提示词与处理中间文件仅存放 D 盘。

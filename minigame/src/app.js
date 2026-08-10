@@ -12,6 +12,7 @@ const campaign = require('./core/campaign');
 const identity = require('../data/identity');
 const cookingTrials = require('./inn/cooking-trials');
 const innScene = require('./inn/scene-interactions');
+const commerce = require('./world/commerce');
 
 function createGame(screenCanvas) {
   const canvas = screenCanvas || wx.createCanvas();
@@ -25,9 +26,11 @@ function createGame(screenCanvas) {
   campaign.ensure(state);
   world.syncQuest(state);
 
-  function interact() {
+  function interact(targetId) {
     renderer.playAction(state.protagonist || 'zhangdeng', 'interact', 420);
-    const spot = world.activeHotspot(state);
+    const spot = targetId
+      ? world.visibleHotspots(state).find((item) => item.id === targetId && world.interactionState(state, item) === 'active')
+      : world.activeHotspot(state);
     if (!spot) {
       state.toast = '附近没有可以互动的目标。';
       return;
@@ -122,7 +125,10 @@ function createGame(screenCanvas) {
       }[action.id] || '';
     }
     innScene.dispatch(state, action);
+    const pendingStoryHotspotId = innScene.consumePendingStory(state);
+    if (pendingStoryHotspotId) interact(pendingStoryHotspotId);
     inn.dispatch(state, action);
+    commerce.dispatch(state, action);
     if (action.type === 'partyToggle') togglePartyMember(action.id);
     if (action.type === 'partyActive' && state.party.indexOf(action.id) >= 0) {
       state.toast = action.id === 'zhangdeng'
@@ -130,6 +136,7 @@ function createGame(screenCanvas) {
         : renderer.role(action.id).name + '已加入战斗编成；探索仍由柳掌灯带队。';
     }
     if (action.type === 'retryAssets') renderer.retryAssets(state);
+    if (action.type === 'transitionReturn') world.rollbackTransition(state);
     if (action.type === 'retryRuntime') renderer.render(state);
     if (action.type === 'returnInn') {
       if (state.activeBranchId === 'jiangnan') {
@@ -209,6 +216,9 @@ function createGame(screenCanvas) {
       if (
         state.screen === 'explore'
         && renderer.readyFor(state)
+        && !state.modal
+        && !state.dialogue
+        && !state.battle
         && !(state.innScene && (state.innScene.activePage || state.innScene.microGame || state.innScene.serviceOpen))
         && !state.managementEvent
       ) world.update(state, controls, 1 / 30);

@@ -1,0 +1,86 @@
+{
+  "maps": [
+    {
+      "id": "inn",
+      "packageName": "scene-core-v23"
+    },
+    {
+      "id": "yard",
+      "packageName": "scene-core-v23"
+    },
+    {
+      "id": "street",
+      "packageName": "scene-core-v23"
+    },
+    {
+      "id": "paper_mill",
+      "packageName": "scene-s1-v23"
+    },
+    {
+      "id": "old_post",
+      "packageName": "scene-s1-v23"
+    },
+    {
+      "id": "grain_market",
+      "packageName": "scene-s1-v23"
+    },
+    {
+      "id": "merchant_alliance_hall",
+      "packageName": "scene-s1-v23"
+    },
+    {
+      "id": "old_ledger_vault",
+      "packageName": "scene-s1-v23"
+    },
+    {
+      "id": "jiangnan_branch",
+      "packageName": "scene-s2-v23"
+    },
+    {
+      "id": "jiangnan_dock",
+      "packageName": "scene-s2-v23"
+    },
+    {
+      "id": "river_market",
+      "packageName": "scene-s2-v23"
+    },
+    {
+      "id": "jiangnan_spice_workshop",
+      "packageName": "scene-s2-v23"
+    },
+    {
+      "id": "old_banquet_kitchen",
+      "packageName": "scene-s2-v23"
+    }
+  ],
+  "props": [
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\ledger.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\notice-scroll.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\broken-rope.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\returned-dishes.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\spice-crate.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\lantern.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\road-plaque.png",
+    "minigame\\subpackages\\scene-core-v23\\assets\\art\\props\\core\\ingredient-basket.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\fiber-basket.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\watermark-paper.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\paper-edge.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\old-letter.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\seal-press.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\marked-grain-crate.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\old-bronze-seal.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s1\\burnt-ledger-page.png",
+    "minigame\\subpackages\\scene-s1-v23\\assets\\art\\props\\s2\\inspection-lantern.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\core\\returned-dishes.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\core\\spice-crate.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\spice-record.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\sealed-spice-sack.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\broken-seal-rope.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\workshop-ledger.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\charred-recipe.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\banquet-cauldron.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\inspection-lantern.png",
+    "minigame\\subpackages\\scene-s2-v23\\assets\\art\\props\\s2\\seasoning-bowl.png"
+  ],
+  "sourceRoot": "D:\\AI\\design-assets\\dengxia\\scene-v23\\source"
+}

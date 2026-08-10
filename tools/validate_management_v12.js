@@ -20,6 +20,12 @@ assert(state.managementView === 'scene', 'New saves must enter the full-scene ma
 assert(/require\('\.\/management-v12'\)/.test(shim), 'The legacy management renderer must not remain active.');
 assert(!/managementNavToggle|COMPACT_PANEL_X|DETAIL_PANEL_X|drawDetailShell/.test(source), 'The v12 renderer must not contain the old drawer navigation.');
 assert(/FONT = \{ title: 20, section: 16, body: 12, caption: 10 \}/.test(source), 'Management typography must use the four approved sizes.');
+assert(/jobColumns: \[360, 490, 620\]/.test(source), 'Character job stamps must use three evenly spaced columns.');
+assert(/jobRows: \[164, 248\]/.test(source), 'Character job stamps must use two stable rows.');
+assert(/actions: \[690, 758\]/.test(source), 'Character commands must use the approved centered action positions.');
+assert(/\{ center: true \}/.test(source), 'Character assignment status must center its icon and label as one group.');
+assert(/centerY - 34, 70, 82/.test(source), 'Job stamp hit areas must not overlap between rows.');
+assert(/ui\.label\(label, centerX, centerY \+ 36, 9,[\s\S]*?, 66\)/.test(source), 'Character command labels must stay within their own centered columns.');
 
 assert(Array.isArray(view.OBJECTS) && view.OBJECTS.length === 7, 'Seven scene object entry points are required.');
 assert(new Set(view.OBJECTS.map((item) => item.id)).size === view.OBJECTS.length, 'Scene object ids must be unique.');

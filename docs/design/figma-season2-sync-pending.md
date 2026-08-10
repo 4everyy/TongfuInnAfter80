@@ -79,3 +79,46 @@
 - `outputs/product-design/battle-v17-audit/02-enemy-warning.png`
 - `outputs/product-design/battle-v17-audit/03-status-details.png`
 - `outputs/product-design/battle-v17-audit/04-victory-links.png`
+
+## 客栈统一交互 v18 待同步
+
+1. 场景物件状态：闲置、当前剧情、午市事务、紧急经营、选中和锁定。
+2. 上下文操作条：剧情行动优先，营业事务其次，普通经营功能随后；同一物件只显示一条操作栏。
+3. 剧情距离状态：未靠近显示锁定原因，进入原热点半径后可执行。
+4. 微玩法覆盖层：采购、备菜、清扫和揽客，取消不结算，熟练后允许快速完成。
+5. 服务任务流转：桌席、灶台、柜台、房牌和大门按当前客流逐一提示。
+
+运行画面基准：
+
+- `outputs/product-design/inn-v18-audit/01-inn-single-attention.png`
+- `outputs/product-design/inn-v18-audit/02-counter-unified-actions.png`
+- `outputs/product-design/inn-v18-audit/03-purchase-microgame.png`
+- `outputs/product-design/inn-v18-audit/04-noon-object-task.png`
+- `outputs/product-design/inn-v18-audit/05-jiangnan-single-attention.png`
+- `outputs/product-design/inn-v18-audit/06-jiangnan-stove-actions.png`
+- `outputs/product-design/inn-v18-audit/07-standard-16x9.png`
+- `outputs/product-design/inn-v18-audit/08-ultrawide.png`
+# v19 美术表现待同步
+
+- 对话：`bubble / standard / dramatic` 三种层级、双侧半身像、朱砂姓名题签和逐字状态。
+- 战斗：五套角色技能视觉语言、第三技能切入、命中停顿、伤害数字和资源失败后备。
+- 场景：门框过场、方向墨推、商路过场、战斗笔锋以及加载失败退回状态。
+- 动效：对话入场 `180ms`、地图过场 `320/420/700ms`、战斗进入 `300ms`、战斗返回 `240ms`。
+
+## v20 正式对话资产待同步
+
+- 五人对话半身像统一使用九格资源结构：六表情、解释、思考和情绪动作。
+- 重要对话保持左右双角色；当前说话者全亮，听者使用约 65% 亮度。
+- 半身像使用透明背景，不再显示方形纸底头像卡。
+- 对话资产按角色章节分包，首次加载需具备轻量等待和失败回退状态。
+- 运行基准：`outputs/product-design/art-presentation-v19/02-dramatic-dialogue.png`、`06-jingzhi-dialogue.png`、`07-wenyan-dialogue.png`、`08-shiwei-dialogue.png`。
+
+## v23 场景精修待同步
+
+1. 地图图层状态：背景、可排序前景、固定前景、剧情道具、阶段光照和天气。
+2. 时段变量：早晨暖斜光、中午清晰环境光、晚间冷环境与暖灯引导；早中晚交叉淡变沿用运行时阶段进度。
+3. 剧情道具状态：隐藏、可调查、已变化、已完成；画面位置与交互锚点允许分离。
+4. 场景切换状态：当前地图、相邻地图预取、增强分包加载、失败后使用原背景与通用光照。
+5. 运行基准：`outputs/product-design/scene-v23-audit/contact-scene-core-v23.png`、`contact-scene-s1-v23.png`、`contact-scene-s2-v23.png`。
+
+原 Figma 文件链接尚未提供，因此本轮只更新待同步清单，不创建替代文件。

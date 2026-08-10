@@ -256,7 +256,7 @@ function recentEnemyHit(battle, enemyId) {
     if (effects[index].targetSide === 'enemy'
       && effects[index].targetId === enemyId
       && effects[index].kind === 'damage'
-      && now - effects[index].startedAt < 170) return effects[index];
+      && now - effects[index].startedAt < 130) return effects[index];
   }
   return null;
 }
@@ -288,11 +288,11 @@ function drawEnemyArt(ui, battle) {
       ui.ctx.save();
       if ('filter' in ui.ctx) ui.ctx.filter = 'brightness(3.2) saturate(0)';
       ui.ctx.globalCompositeOperation = 'screen';
-      ui.ctx.globalAlpha = clamp(1 - (Date.now() - flash.startedAt) / 170, 0, 1);
+      ui.ctx.globalAlpha = clamp(1 - (Date.now() - flash.startedAt) / 130, 0, 1);
       ui.artNpc(sprite, x, y, height, x, y);
       ui.ctx.restore();
       ui.ctx.save();
-      ui.ctx.globalAlpha = clamp(1 - (Date.now() - flash.startedAt) / 170, 0, 1) * 0.7;
+      ui.ctx.globalAlpha = clamp(1 - (Date.now() - flash.startedAt) / 130, 0, 1) * 0.7;
       ui.ctx.strokeStyle = '#fff9df';
       ui.ctx.lineWidth = 3;
       ui.ctx.beginPath();
@@ -675,6 +675,7 @@ function drawActions(ui, battle) {
   var attackY;
   var configs;
   if (battle.result || !battle.turn || battle.turn.side !== 'party') return;
+  if (battle.visualLockUntil && Date.now() < battle.visualLockUntil) return;
   actor = battle.turn.unit;
   item = role(actor.id);
   art = ui.assets.manifest.characters[actor.id] || {};
@@ -907,6 +908,221 @@ function drawFloatingValue(ui, effect, x, y, progress, alpha) {
   ui.ctx.restore();
 }
 
+function drawMotif(ui, performance, x, y, progress, alpha) {
+  var ctx = ui.ctx;
+  var motif = performance.motif;
+  var palette = performance.palette || ['#fff1c4', '#d7a84a', '#a83c2d'];
+  var radius = 16 + progress * 42;
+  var index;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = palette[0];
+  ctx.fillStyle = palette[1];
+  ctx.lineWidth = Math.max(1, 4 - progress * 2);
+
+  if (motif === 'lantern' || motif === 'fire') {
+    for (index = 0; index < 3; index += 1) {
+      ctx.beginPath();
+      ctx.arc(x, y, radius * (0.45 + index * 0.25), Math.PI + progress, Math.PI * 2.2 + progress);
+      ctx.stroke();
+    }
+    for (index = 0; index < 7; index += 1) {
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(index * 0.9) * radius, y + Math.sin(index * 0.9) * radius * 0.55 - progress * 18, 2.5 + index % 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (motif === 'ledger' || motif === 'contract') {
+    ctx.translate(x, y);
+    ctx.rotate((progress - 0.5) * 0.18);
+    for (index = 0; index < 3; index += 1) {
+      ctx.globalAlpha = alpha * (0.78 - index * 0.16);
+      ctx.strokeRect(-24 + index * 7, -17 - index * 5, 48, 34);
+      ctx.beginPath();
+      ctx.moveTo(-17 + index * 7, -7 - index * 5);
+      ctx.lineTo(15 + index * 7, -7 - index * 5);
+      ctx.moveTo(-17 + index * 7, 2 - index * 5);
+      ctx.lineTo(9 + index * 7, 2 - index * 5);
+      ctx.stroke();
+    }
+  } else if (motif === 'abacus') {
+    for (index = -1; index <= 1; index += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x - radius, y + index * 10);
+      ctx.lineTo(x + radius, y + index * 10);
+      ctx.stroke();
+    }
+    for (index = 0; index < 7; index += 1) {
+      ctx.beginPath();
+      ctx.ellipse(x - radius + progress * radius * 2 + index * 8 - 24, y + (index % 3 - 1) * 10, 5, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (motif === 'wind' || motif === 'footwork' || motif === 'acupoint') {
+    for (index = 0; index < 4; index += 1) {
+      ctx.beginPath();
+      ctx.arc(x - 12 + index * 7, y, radius + index * 5, -2.5 + progress, -0.35 + progress);
+      ctx.stroke();
+    }
+    if (motif === 'acupoint') {
+      for (index = 0; index < 5; index += 1) {
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(index * 1.7) * 22, y + Math.sin(index * 1.7) * 30, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else if (motif === 'palm' || motif === 'impact' || motif === 'guard') {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, -2.55, 0.45);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, radius * 0.68, -2.35, 0.25);
+    ctx.stroke();
+    for (index = 0; index < 7; index += 1) {
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(index * 0.9) * radius * 0.65, y + Math.sin(index * 0.9) * radius * 0.45);
+      ctx.lineTo(x + Math.cos(index * 0.9) * radius * 1.15, y + Math.sin(index * 0.9) * radius * 0.8);
+      ctx.stroke();
+    }
+  } else if (motif === 'ink' || motif === 'seal') {
+    ctx.strokeStyle = palette[2];
+    ctx.lineWidth = 5 - progress * 2;
+    ctx.beginPath();
+    ctx.moveTo(x - radius, y + radius * 0.35);
+    ctx.quadraticCurveTo(x - 5, y - radius, x + radius, y - radius * 0.2);
+    ctx.stroke();
+    if (motif === 'seal') {
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x - 18, y - 18, 36, 36);
+      ctx.strokeRect(x - 11, y - 11, 22, 22);
+    }
+  } else if (motif === 'steam' || motif === 'spice') {
+    for (index = 0; index < 6; index += 1) {
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(index * 1.3 + progress * 3) * radius * 0.7, y + Math.sin(index * 1.3) * 16 - progress * 34, 3 + index % 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(x, y + 13, radius * 0.72, 0.1, Math.PI - 0.1);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawAtlasVfx(ui, performance, x, y, elapsed, alpha) {
+  var image;
+  var frameSize = performance.frameSize;
+  var phases = [
+    { id: 'anticipation', end: performance.anticipation },
+    { id: 'active', end: performance.anticipation + performance.active },
+    { id: 'impact', end: performance.anticipation + performance.active + performance.impact },
+    { id: 'recovery', end: performance.duration },
+  ];
+  var previousEnd = 0;
+  var phase;
+  var frames;
+  var localProgress;
+  var frame;
+  var index;
+  var columns;
+  var displayScale;
+  if (!performance.atlas || !frameSize) return false;
+  image = ui.assets.image(performance.atlas);
+  if (!image) return false;
+  for (index = 0; index < phases.length; index += 1) {
+    if (elapsed <= phases[index].end) {
+      phase = phases[index];
+      break;
+    }
+    previousEnd = phases[index].end;
+  }
+  if (!phase) return false;
+  frames = performance.frames && performance.frames[phase.id] || [];
+  if (!frames.length) return false;
+  localProgress = clamp((elapsed - previousEnd) / Math.max(1, phase.end - previousEnd), 0, 0.999);
+  frame = frames[Math.floor(localProgress * frames.length)];
+  columns = performance.atlasColumns || 1;
+  displayScale = performance.displayScale || 1;
+  ui.ctx.save();
+  ui.ctx.globalAlpha = alpha;
+  ui.ctx.drawImage(
+    image,
+    frame % columns * frameSize.width,
+    Math.floor(frame / columns) * frameSize.height,
+    frameSize.width,
+    frameSize.height,
+    x - frameSize.width * displayScale / 2,
+    y - frameSize.height * displayScale / 2,
+    frameSize.width * displayScale,
+    frameSize.height * displayScale
+  );
+  ui.ctx.restore();
+  return true;
+}
+
+function drawSkillCutIn(ui, performance, elapsed) {
+  var art;
+  var image;
+  var progress;
+  var alpha;
+  var x;
+  if (!performance.cutIn || elapsed < 0 || elapsed > 420) return;
+  progress = clamp(elapsed / 420, 0, 1);
+  alpha = progress < 0.2 ? progress / 0.2 : clamp((1 - progress) / 0.22, 0, 1);
+  art = ui.assets.manifest.characters[performance.roleId] || {};
+  image = ui.assets.image(art.skillCutIn || art.battlePortrait || art.battle || art.portrait);
+  ui.ctx.save();
+  ui.ctx.globalAlpha = alpha;
+  ui.ctx.fillStyle = '#17110ee8';
+  ui.ctx.fillRect(0, 94, ui.width, 116);
+  ui.ctx.fillStyle = performance.palette[2];
+  ui.ctx.fillRect(0, 94, 7, 116);
+  ui.ctx.fillRect(ui.width - 7, 94, 7, 116);
+  x = 50 - (1 - Math.min(1, progress * 4)) * 28;
+  if (image) ui.ctx.drawImage(image, x, 87, 132, 132);
+  ui.label(performance.skillName, 208, 139, 22, '#f7e9c7', 'left', ui.theme.fonts.title, 360);
+  ui.label('绝技 · 气势展开', 210, 172, 11, performance.palette[0], 'left', ui.theme.fonts.body);
+  ui.ctx.restore();
+}
+
+function drawSkillPerformance(ui, battle) {
+  var performance = battle.performance;
+  var elapsed;
+  var progress;
+  var alpha;
+  var position;
+  if (!performance) return;
+  elapsed = Date.now() - performance.startedAt;
+  if (elapsed < 0 || elapsed > performance.duration) return;
+  progress = clamp(elapsed / performance.duration, 0, 1);
+  alpha = progress < 0.12 ? progress / 0.12 : clamp((1 - progress) / 0.2, 0, 1);
+  position = performance.targetId
+    ? enemyEffectPosition(battle, performance.targetId)
+    : partyEffectPosition(battle, performance.roleId);
+  ui.ctx.save();
+  ui.ctx.globalAlpha = alpha * 0.12;
+  ui.ctx.fillStyle = performance.screenTint;
+  ui.ctx.fillRect(0, SCENE_TOP, ui.width, ui.height - SCENE_TOP);
+  ui.ctx.restore();
+  if (!drawAtlasVfx(ui, performance, position.x, position.y, elapsed, alpha)) {
+    drawMotif(ui, performance, position.x, position.y, progress, alpha);
+  }
+  drawSkillCutIn(ui, performance, elapsed);
+}
+
+function battleShake(battle) {
+  var performance = battle.performance;
+  var distance;
+  var strength;
+  if (!performance || !performance.cameraShake) return { x: 0, y: 0 };
+  distance = Math.abs(Date.now() - performance.impactAt);
+  if (distance > 110) return { x: 0, y: 0 };
+  strength = performance.cameraShake * (1 - distance / 110);
+  return {
+    x: Math.sin(Date.now() * 0.31) * strength,
+    y: Math.cos(Date.now() * 0.27) * strength * 0.55,
+  };
+}
+
 function drawBattleEffects(ui, battle) {
   var now = Date.now();
   var effects = battle.effects || [];
@@ -915,6 +1131,8 @@ function drawBattleEffects(ui, battle) {
   var elapsed;
   var progress;
   var alpha;
+  var floatProgress;
+  var floatAlpha;
   var position;
   for (index = 0; index < effects.length; index += 1) {
     effect = effects[index];
@@ -932,7 +1150,9 @@ function drawBattleEffects(ui, battle) {
     } else {
       drawStatusEffect(ui, effect.skillType, position.x, position.y, progress, alpha);
     }
-    drawFloatingValue(ui, effect, position.x, position.y, progress, alpha);
+    floatProgress = clamp(elapsed / (effect.floatDuration || 480), 0, 1);
+    floatAlpha = floatProgress < 0.12 ? floatProgress / 0.12 : clamp((1 - floatProgress) / 0.32, 0, 1);
+    drawFloatingValue(ui, effect, position.x, position.y, floatProgress, floatAlpha);
   }
 }
 
@@ -1166,6 +1386,7 @@ function drawVictoryOverlay(ui, battle) {
 function drawBattle(ui, state) {
   var battle = state.battle;
   var hasBackground;
+  var shake;
   if (!battle) return;
 
   ui.rect(0, 0, ui.width, ui.height, '#243136');
@@ -1174,11 +1395,16 @@ function drawBattle(ui, state) {
   drawHud(ui, state);
   ui.label(battle.title, 18, 64, 16, ui.theme.colors.paper, 'left', ui.theme.fonts.title, 230);
   drawTurnSeal(ui, battle);
+  shake = battleShake(battle);
+  ui.ctx.save();
+  ui.ctx.translate(shake.x, shake.y);
   drawActiveArt(ui, battle);
   drawEnemyArt(ui, battle);
   drawParty(ui, battle);
   drawEnemies(ui, battle);
+  ui.ctx.restore();
   drawEnemyWarning(ui, battle);
+  drawSkillPerformance(ui, battle);
   drawBattleEffects(ui, battle);
   drawBattleLog(ui, battle);
   drawActions(ui, battle);

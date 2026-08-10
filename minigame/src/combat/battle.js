@@ -3,6 +3,8 @@ var world = require('../world/explore');
 var management = require('../inn/inn');
 var campaign = require('../core/campaign');
 var caseFiles = require('../core/case-files');
+var presentation = require('../../data/presentation');
+var commerce = require('../world/commerce');
 
 var roles = content.roles;
 var battles = content.battles;
@@ -50,22 +52,54 @@ function pushEffect(battle, effect) {
   });
   effectSerial += 1;
   entry.id = 'battle-effect-' + Date.now() + '-' + effectSerial;
-  entry.startedAt = Date.now();
+  if (!entry.startedAt) entry.startedAt = Date.now();
+  if (entry.sourceSide === 'party'
+    && battle.performance
+    && Date.now() <= battle.performance.startedAt + battle.performance.duration
+    && battle.performance.roleId === entry.sourceId) {
+    entry.roleId = battle.performance.roleId;
+    entry.skillIndex = battle.performance.skillIndex;
+    entry.motif = battle.performance.motif;
+    entry.palette = battle.performance.palette;
+    entry.startedAt = battle.performance.impactAt;
+  }
   entry.duration = numberOr(entry.duration, 760);
+  entry.floatDuration = numberOr(entry.floatDuration, entry.critical ? 650 : 480);
   if (!battle.effects) battle.effects = [];
   battle.effects.push(entry);
   if (battle.effects.length > 18) battle.effects.splice(0, battle.effects.length - 18);
   return entry;
 }
 
+function beginPerformance(battle, roleId, skillIndex, skillType, skillName, targetId) {
+  var visual = presentation.skill(roleId, skillIndex, skillType);
+  var startedAt = Date.now();
+  var duration = visual.anticipation + visual.active + visual.impact + visual.recovery;
+  battle.performance = Object.assign({}, visual, {
+    skillName: skillName,
+    targetId: targetId || null,
+    startedAt: startedAt,
+    impactAt: startedAt + visual.anticipation + Math.round(visual.active * 0.62),
+    duration: duration,
+  });
+  battle.visualLockUntil = startedAt + duration;
+  return battle.performance;
+}
+
 function partyUnit(state, id) {
   var definition = role(id);
   var character = state.characters[id];
+  var equipment = commerce.bonuses(state, id);
+  var maxHp = definition.stats[0] + equipment.hp;
+  var maxQi = definition.stats[1] + equipment.qi;
   return {
     id: id,
-    hp: numberOr(character.hp, definition.stats[0]),
-    maxHp: definition.stats[0],
-    qi: numberOr(character.qi, definition.stats[1]),
+    hp: Math.min(maxHp, numberOr(character.hp, maxHp)),
+    maxHp: maxHp,
+    qi: Math.min(maxQi, numberOr(character.qi, maxQi)),
+    maxQi: maxQi,
+    attackBonus: equipment.attack,
+    speedBonus: equipment.speed,
     shield: 0,
     stun: 0,
     focus: 0,
@@ -116,6 +150,8 @@ function start(state, id) {
     metrics: { actions: 0, rounds: 1, damageDealt: 0, damageTaken: 0, healing: 0, partyDown: 0 },
     result: null,
   };
+  state.visualTransition = { kind: 'battle-enter', startedAt: Date.now(), duration: 300 };
+  state.battle.visualLockUntil = Date.now() + 300;
   next(state);
   return true;
 }
@@ -135,7 +171,7 @@ function hurt(target, amount) {
 
 function turnSpeed(turn) {
   var definition = turn.side === 'party' ? role(turn.unit.id) : null;
-  return definition ? definition.stats[2] : numberOr(turn.unit.speed, 0);
+  return definition ? definition.stats[2] + numberOr(turn.unit.speedBonus, 0) : numberOr(turn.unit.speed, 0);
 }
 
 function unitById(list, id) {
@@ -344,7 +380,8 @@ function action(state, type, value, targetId) {
   target = unitById(targets, targetId) || targets[0];
 
   if (type === 'attack') {
-    damage = definition.stats[2] + 10 + actor.focus;
+    battle.performance = null;
+    damage = definition.stats[2] + 10 + actor.focus + numberOr(actor.attackBonus, 0);
     actual = hurt(target, damage);
     pushEffect(battle, {
       kind: 'damage',
@@ -364,9 +401,10 @@ function action(state, type, value, targetId) {
       return;
     }
     actor.qi -= skill[2];
+    beginPerformance(battle, actor.id, value, skill[1], skill[0], target && target.id);
     amount = skill[3];
     if (skill[1] === 'damage') {
-      actual = hurt(target, amount + actor.focus);
+      actual = hurt(target, amount + actor.focus + numberOr(actor.attackBonus, 0));
       pushEffect(battle, {
         kind: 'damage',
         skillType: skill[1],
@@ -379,7 +417,7 @@ function action(state, type, value, targetId) {
       battle.metrics.damageDealt += actual;
     }
     if (skill[1] === 'damageAll') targets.forEach(function (enemy) {
-      actual = hurt(enemy, amount);
+      actual = hurt(enemy, amount + Math.round(numberOr(actor.attackBonus, 0) * 0.6));
       pushEffect(battle, {
         kind: 'damage',
         skillType: skill[1],
@@ -392,7 +430,7 @@ function action(state, type, value, targetId) {
       battle.metrics.damageDealt += actual;
     });
     if (skill[1] === 'heal') {
-      healed = Math.min(amount, definition.stats[0] - actor.hp);
+      healed = Math.min(amount, actor.maxHp - actor.hp);
       actor.hp += healed;
       pushEffect(battle, {
         kind: 'heal',
@@ -406,7 +444,7 @@ function action(state, type, value, targetId) {
       battle.metrics.healing += healed;
     }
     if (skill[1] === 'healAll') alive(battle.party).forEach(function (unit) {
-      healed = Math.min(amount, role(unit.id).stats[0] - unit.hp);
+      healed = Math.min(amount, unit.maxHp - unit.hp);
       unit.hp += healed;
       pushEffect(battle, {
         kind: 'heal',
@@ -480,8 +518,9 @@ function action(state, type, value, targetId) {
     }
     battle.log = definition.name + '施展“' + skill[0] + '”。';
   } else if (type === 'defend') {
+    battle.performance = null;
     actor.shield += 18;
-    actor.qi = Math.min(definition.stats[1], actor.qi + 8);
+    actor.qi = Math.min(actor.maxQi, actor.qi + 8);
     pushEffect(battle, {
       kind: 'shield',
       skillType: 'defend',
@@ -652,6 +691,7 @@ function finish(state) {
   state.toast = battle.result.message;
   battle.result.claimed = true;
   state.battle = null;
+  state.visualTransition = { kind: 'battle-return', startedAt: Date.now(), duration: 240 };
   world.syncQuest(state);
   return true;
 }

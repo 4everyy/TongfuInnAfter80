@@ -21,6 +21,22 @@
     {
       "name": "s2ch11",
       "root": "subpackages/s2ch11"
+    },
+    {
+      "name": "scene-core-v23",
+      "root": "subpackages/scene-core-v23"
+    },
+    {
+      "name": "scene-s1-v23",
+      "root": "subpackages/scene-s1-v23"
+    },
+    {
+      "name": "scene-s2-v23",
+      "root": "subpackages/scene-s2-v23"
+    },
+    {
+      "name": "npc-pop-v26",
+      "root": "subpackages/npc-pop-v26"
     }
   ],
   "networkTimeout": {

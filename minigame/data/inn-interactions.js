@@ -1,23 +1,23 @@
 'use strict';
 
 var ACTIONS = {
-  counter: { id: 'counter', label: '查看账目', kind: 'page', page: 'counter', phases: ['morning', 'evening'] },
-  settle: { id: 'settle', label: '打烊结算', kind: 'dispatch', action: { type: 'settle' }, phases: ['evening'], primary: true },
-  open: { id: 'open', label: '开门迎客', kind: 'dispatch', action: { type: 'startShift' }, phases: ['morning'], primary: true },
-  promote: { id: 'promote', label: '街口揽客', kind: 'micro', microGame: 'promote', phases: ['morning'] },
-  sign: { id: 'sign', label: '修整招牌', kind: 'page', page: 'door', phases: ['evening'] },
-  kitchen: { id: 'kitchen', label: '菜单与定价', kind: 'page', page: 'kitchen', phases: ['morning', 'evening'] },
-  prepare: { id: 'prepare', label: '提前备菜', kind: 'micro', microGame: 'prepare', phases: ['morning'] },
-  recipe: { id: 'recipe', label: '研究菜谱', kind: 'page', page: 'kitchen', phases: ['evening'] },
-  supply: { id: 'supply', label: '查看库存', kind: 'page', page: 'supply', phases: ['morning', 'evening'] },
-  purchase: { id: 'purchase', label: '采购食材', kind: 'micro', microGame: 'purchase', phases: ['morning'] },
-  transport: { id: 'transport', label: '运输订单', kind: 'page', page: 'supply', phases: ['morning', 'evening'] },
-  hall: { id: 'hall', label: '大堂状态', kind: 'page', page: 'hall', phases: ['morning', 'evening'] },
-  clean: { id: 'clean', label: '清扫大堂', kind: 'micro', microGame: 'clean', phases: ['morning'] },
-  rooms: { id: 'rooms', label: '客房与住客', kind: 'page', page: 'rooms', phases: ['morning', 'evening'] },
-  notice: { id: 'notice', label: '委托与证据', kind: 'page', page: 'notice', phases: ['morning', 'evening'] },
-  yard: { id: 'yard', label: '修缮与休息', kind: 'page', page: 'yard', phases: ['evening'] },
-  service: { id: 'service', label: '处理当前事务', kind: 'service', phases: ['noon'], primary: true },
+  counter: { id: 'counter', label: '查看账目', icon: 'abacus', kind: 'page', page: 'counter', phases: ['morning', 'evening'] },
+  settle: { id: 'settle', label: '打烊结算', icon: 'complete', kind: 'dispatch', action: { type: 'settle' }, phases: ['evening'], primary: true },
+  open: { id: 'open', label: '开门迎客', icon: 'door', kind: 'dispatch', action: { type: 'startShift' }, phases: ['morning'], primary: true },
+  promote: { id: 'promote', label: '街口揽客', icon: 'dialogue', kind: 'micro', microGame: 'promote', phases: ['morning'] },
+  sign: { id: 'sign', label: '修整招牌', icon: 'hammer', kind: 'page', page: 'door', phases: ['evening'] },
+  kitchen: { id: 'kitchen', label: '菜单与定价', icon: 'pot', kind: 'page', page: 'kitchen', phases: ['morning', 'evening'] },
+  prepare: { id: 'prepare', label: '提前备菜', icon: 'pot', kind: 'micro', microGame: 'prepare', phases: ['morning'] },
+  recipe: { id: 'recipe', label: '研究菜谱', icon: 'quest', kind: 'page', page: 'kitchen', phases: ['evening'] },
+  supply: { id: 'supply', label: '查看库存', icon: 'basket', kind: 'page', page: 'supply', phases: ['morning', 'evening'] },
+  purchase: { id: 'purchase', label: '采购食材', icon: 'basket', kind: 'micro', microGame: 'purchase', phases: ['morning'] },
+  transport: { id: 'transport', label: '运输订单', icon: 'exit', kind: 'page', page: 'supply', phases: ['morning', 'evening'] },
+  hall: { id: 'hall', label: '大堂状态', icon: 'quest', kind: 'page', page: 'hall', phases: ['morning', 'evening'] },
+  clean: { id: 'clean', label: '清扫大堂', icon: 'broom', kind: 'micro', microGame: 'clean', phases: ['morning'] },
+  rooms: { id: 'rooms', label: '客房与住客', icon: 'key', kind: 'page', page: 'rooms', phases: ['morning', 'evening'] },
+  notice: { id: 'notice', label: '委托与证据', icon: 'quest', kind: 'page', page: 'notice', phases: ['morning', 'evening'] },
+  yard: { id: 'yard', label: '修缮与休息', icon: 'hammer', kind: 'page', page: 'yard', phases: ['evening'] },
+  service: { id: 'service', label: '处理当前事务', icon: 'warning', kind: 'service', phases: ['noon'], primary: true },
 };
 
 var OBJECTS = {
@@ -62,7 +62,7 @@ var OBJECTS = {
     {
       id: 'changfeng-yard-bench', role: 'yard', label: '后院工作台',
       anchor: { x: 665, y: 276 }, hit: { x: 600, y: 226, width: 134, height: 92 },
-      actions: ['yard', 'prepare'],
+      actions: ['yard'],
     },
   ],
   jiangnan_branch: [

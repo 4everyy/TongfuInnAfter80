@@ -1,4 +1,7 @@
 const FRAME_SIZE = { width: 192, height: 256 };
+const sceneV23 = require('./scene-v23');
+const scenePopulation = require('../../data/scene-population');
+const npcPopulationV26 = require('../../data/npc-population-v26');
 const PIVOT = { x: 96, y: 244 };
 const CLIPS = {
   idle: [0, 1, 2, 3],
@@ -53,9 +56,14 @@ function directional(side, front, back) {
   return { side, front: front || side, back: back || side };
 }
 
-module.exports = {
+const manifest = {
   root: 'assets/art/',
   ui: {
+    presentation: {
+      dialogue: 'ui/presentation/dialogue-frame-v29.webp',
+      portrait: 'ui/presentation/portrait-frame-v29.webp',
+      prompt: 'ui/presentation/prompt-frame-v29.webp',
+    },
     resources: {
       coin: 'ui/hud-coin.png',
       ingredient: 'ui/hud-food.png',
@@ -148,6 +156,30 @@ module.exports = {
   characters: {
     zhangdeng: roleArt({
       portrait: 'characters/xiangyu/portrait-v9.webp',
+      dialogue: {
+        bust: 'characters/xiangyu/portrait-v9.webp',
+        atlas: 'characters/xiangyu/dialogue-sheet-v20.webp',
+        frameSize: { width: 418, height: 418 },
+        columns: 3,
+        bustFrame: 0,
+        expressionFrames: {
+          neutral: 0,
+          happy: 1,
+          relieved: 1,
+          questioning: 2,
+          focused: 2,
+          tense: 3,
+          angry: 4,
+          sad: 5,
+          thoughtful: 7,
+        },
+        poseFrames: { idle: 0, explain: 6, think: 7, emotion: 8 },
+        expressions: {},
+        poses: {},
+      },
+      battle: 'characters/xiangyu/battle-v19.webp',
+      battlePortrait: 'characters/xiangyu/battle-v19.webp',
+      skillCutIn: 'characters/xiangyu/battle-v19.webp',
       skillIcons: [2, 3, 4],
       atlases: directional(
         'characters/xiangyu/explore-v3.png',
@@ -157,6 +189,29 @@ module.exports = {
     }),
     wuchen: roleArt({
       portrait: 'characters/zhantang/portrait-v9.webp',
+      dialogue: {
+        bust: 'characters/zhantang/portrait-v9.webp',
+        atlas: '@ch34/characters/zhantang/dialogue-sheet-v20.webp',
+        frameSize: { width: 418, height: 418 },
+        columns: 3,
+        bustFrame: 0,
+        expressionFrames: {
+          neutral: 0,
+          happy: 1,
+          relieved: 1,
+          questioning: 2,
+          focused: 2,
+          tense: 3,
+          angry: 4,
+          sad: 5,
+          thoughtful: 7,
+        },
+        poseFrames: { idle: 0, explain: 6, think: 7, emotion: 8 },
+        expressions: {},
+        poses: {},
+      },
+      battlePortrait: 'characters/zhantang/battle.webp',
+      skillCutIn: 'characters/zhantang/battle.webp',
       skillIcons: [5, 6, 7],
       atlases: directional(
         'characters/zhantang/explore-v3.png',
@@ -167,6 +222,29 @@ module.exports = {
     }),
     jingzhi: roleArt({
       portrait: 'characters/furong/portrait.webp',
+      dialogue: {
+        bust: 'characters/furong/portrait.webp',
+        atlas: '@ch34/characters/furong/dialogue-sheet-v20.webp',
+        frameSize: { width: 512, height: 341 },
+        columns: 3,
+        bustFrame: 0,
+        expressionFrames: {
+          neutral: 0,
+          happy: 1,
+          relieved: 1,
+          questioning: 2,
+          focused: 2,
+          tense: 3,
+          angry: 4,
+          sad: 5,
+          thoughtful: 7,
+        },
+        poseFrames: { idle: 0, explain: 6, think: 7, emotion: 8 },
+        expressions: {},
+        poses: {},
+      },
+      battlePortrait: 'characters/furong/battle.webp',
+      skillCutIn: 'characters/furong/battle.webp',
       skillIcons: [8, 9, 10],
       atlases: directional(
         'characters/furong/explore-v3.png',
@@ -177,6 +255,29 @@ module.exports = {
     }),
     wenyan: roleArt({
       portrait: 'characters/xiucai/portrait.webp',
+      dialogue: {
+        bust: 'characters/xiucai/portrait.webp',
+        atlas: '@ch34/characters/xiucai/dialogue-sheet-v20.webp',
+        frameSize: { width: 418, height: 418 },
+        columns: 3,
+        bustFrame: 0,
+        expressionFrames: {
+          neutral: 0,
+          happy: 1,
+          relieved: 1,
+          questioning: 2,
+          focused: 2,
+          tense: 3,
+          angry: 4,
+          sad: 5,
+          thoughtful: 7,
+        },
+        poseFrames: { idle: 0, explain: 6, think: 7, emotion: 8 },
+        expressions: {},
+        poses: {},
+      },
+      battlePortrait: 'characters/xiucai/battle.webp',
+      skillCutIn: 'characters/xiucai/battle.webp',
       skillIcons: [11, 12, 13],
       atlases: directional(
         'characters/xiucai/explore-v3.png',
@@ -187,6 +288,29 @@ module.exports = {
     }),
     shiwei: roleArt({
       portrait: '@s2ch910/characters/shiwei/portrait.webp',
+      dialogue: {
+        bust: '@s2ch910/characters/shiwei/portrait.webp',
+        atlas: '@s2ch910/characters/shiwei/dialogue-sheet-v20.webp',
+        frameSize: { width: 418, height: 418 },
+        columns: 3,
+        bustFrame: 0,
+        expressionFrames: {
+          neutral: 0,
+          happy: 1,
+          relieved: 1,
+          questioning: 2,
+          focused: 2,
+          tense: 3,
+          angry: 4,
+          sad: 5,
+          thoughtful: 7,
+        },
+        poseFrames: { idle: 0, explain: 6, think: 7, emotion: 8 },
+        expressions: {},
+        poses: {},
+      },
+      battlePortrait: '@s2ch910/characters/shiwei/battle.webp',
+      skillCutIn: '@s2ch910/characters/shiwei/battle.webp',
       skillIcons: [14, 15, 16],
       atlases: directional(
         '@s2ch910/characters/shiwei/explore-side.png',
@@ -200,12 +324,18 @@ module.exports = {
     }),
   },
   npcs: {
-    tea_owner: { sprite: 'npcs/tea_owner.png' },
-    merchant: { sprite: 'npcs/merchant.png' },
-    guard: { sprite: 'npcs/guard.png' },
-    townsman_old: { sprite: 'npcs/townsman_old.png' },
-    townswoman_young: { sprite: 'npcs/townswoman_young.png' },
-    ruffian_heavy: { sprite: 'npcs/ruffian_heavy.png' },
-    ruffian_fast: { sprite: 'npcs/ruffian_fast.png' },
+    tea_owner: { sprite: 'npcs/tea_owner.png', displayScale: 1.06, shadowScale: 0.96, shadowAlpha: 0.12 },
+    merchant: { sprite: 'npcs/merchant.png', displayScale: 1.04, shadowScale: 0.92, shadowAlpha: 0.12 },
+    guard: { sprite: 'npcs/guard.png', displayScale: 1.07, shadowScale: 0.94, shadowAlpha: 0.12 },
+    townsman_old: { sprite: 'npcs/townsman_old.png', displayScale: 1.03, shadowScale: 0.94, shadowAlpha: 0.11 },
+    townswoman_young: { sprite: 'npcs/townswoman_young.png', displayScale: 1.03, shadowScale: 0.90, shadowAlpha: 0.11 },
+    ruffian_heavy: { sprite: 'npcs/ruffian_heavy.png', displayScale: 1.10, shadowScale: 1.08, shadowAlpha: 0.15 },
+    ruffian_fast: { sprite: 'npcs/ruffian_fast.png', displayScale: 1.06, shadowScale: 0.96, shadowAlpha: 0.13 },
   },
 };
+
+sceneV23.apply(manifest.maps);
+scenePopulation.applyArt(manifest.maps);
+npcPopulationV26.applyArt(manifest.npcs, manifest.maps);
+
+module.exports = manifest;

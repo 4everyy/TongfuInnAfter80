@@ -93,7 +93,7 @@ const maps = [
       { id: 'c04-river-fight', x: 1120, y: 292, radius: 90, label: '押货打手', type: 'battle', battle: 'c04-river-guards', requires: ['c04-cargo-proof'], unless: ['c04-river-won'] },
       { id: 'c04-cooperate', x: 760, y: 292, radius: 82, label: '郭芙蓉的约定', type: 'dialogue', dialogue: 'c04-cooperate', requires: ['c04-river-won'], unless: ['c04-complete'] },
     ],
-    npcs: [{ id: 'river-guard-heavy', artId: 'ruffian_heavy', name: '押货打手', x: 1080, y: 272, facing: 'left', requires: ['c04-cargo-proof'], unless: ['c04-river-won'] }],
+    npcs: [{ id: 'river-guard-heavy', artId: 'ruffian_heavy', name: '押货打手', x: 1100, y: 280, facing: 'left', requires: ['c04-cargo-proof'], unless: ['c04-river-won'] }],
   },
 ];
 

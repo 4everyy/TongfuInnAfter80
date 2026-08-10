@@ -2,6 +2,7 @@
 
 var innScene = require('../../inn/scene-interactions');
 var management = require('../../inn/inn');
+var uiArt = require('../ui-art-v29');
 
 var SCENE_Y = 42;
 var ROLE_TONES = {
@@ -80,10 +81,10 @@ function drawObjectHint(ui, state, object, camera) {
   var scene = innScene.ensure(state);
   var status = innScene.attention(state, object);
   var selected = scene.selectedObjectId === object.id;
-  var seen = scene.seenObjects.indexOf(object.id) >= 0;
-  var pulse = status === 'urgent' || status === 'ready'
+  var highlighted = status !== 'idle';
+  var pulse = highlighted
     ? 0.75 + (Math.sin(Date.now() / 900 * Math.PI * 2) + 1) * 0.125
-    : 0.42;
+    : 0;
   var x = object.hit.x - camera;
   var y = SCENE_Y + object.hit.y;
   var width = Math.max(44, object.hit.width);
@@ -91,16 +92,15 @@ function drawObjectHint(ui, state, object, camera) {
   var tone = ROLE_TONES[object.role] || '#b68a4f';
   var iconX = object.anchor.x - camera;
   var iconY = SCENE_Y + object.anchor.y;
-  var showLabel = selected || !seen || status !== 'idle';
   if (x + width < 0 || x > ui.width) return;
-  drawCornerFocus(ui, x, y, width, height, tone, selected ? 1 : pulse);
-  if (showLabel) {
+  if (selected) drawCornerFocus(ui, x, y, width, height, tone, 1);
+  if (selected || highlighted) {
     ui.ctx.save();
     ui.ctx.globalAlpha = selected ? 1 : clamp(pulse, 0.55, 0.9);
-    ui.roundedRect(iconX - 15, iconY - 15, 30, 30, 4, '#f1dfbddd', tone);
-    ui.label(ROLE_GLYPHS[object.role] || '物', iconX, iconY, 12, '#2c211d', 'center', ui.theme.fonts.title);
+    uiArt.drawPanel(ui, 'prompt', iconX - 15, iconY - 15, 30, 30, { fill: '#f1dfbddd', stroke: tone, shadow: false });
+    uiArt.drawIcon(ui, object.role, iconX, iconY, 14, '#2c211d');
     ui.ctx.restore();
-    if (selected || !seen) {
+    if (selected) {
       cutPanel(ui, iconX - 42, iconY + 19, 84, 20, '#241a16d9', tone, 4);
       ui.label(object.label, iconX, iconY + 29, 10, '#f4e5c5', 'center', ui.theme.fonts.body, 76);
     }
@@ -116,14 +116,13 @@ function drawObjectLayer(ui, state, camera) {
 }
 
 function actionButton(ui, action, x, y, width, primary) {
-  var pressed = ui.pressed && ui.pressed({ type: 'innObjectAction', id: action.id });
-  var drawY = y + (pressed ? 2 : 0);
   var locked = !!action.lockedReason;
-  var fill = locked ? '#b7aa90' : primary ? '#a74435' : '#ead8ad';
-  var text = locked ? '#736a5a' : primary ? '#fff0cf' : '#30241e';
-  cutPanel(ui, x, drawY, width, 44, fill, locked ? '#8f8471' : primary ? '#6d2b22' : '#745a3e', 5);
-  ui.label(action.label, x + width / 2, drawY + 22, 11, text, 'center', ui.theme.fonts.body, width - 12);
-  ui.hitArea({ type: 'innObjectAction', id: action.id }, x, y, width, 44);
+  uiArt.drawSealButton(ui, { type: 'innObjectAction', id: action.id }, x, y, width, 44, action.label, {
+    primary: primary,
+    disabled: locked,
+    icon: locked ? 'lock' : action.icon || 'hand',
+    size: 11,
+  });
 }
 
 function drawActionTray(ui, state) {
@@ -136,14 +135,15 @@ function drawActionTray(ui, state) {
   var buttonWidth;
   if (!object || scene.microGame || scene.serviceOpen || scene.activePage) return;
   actions = innScene.actionsForObject(state, object);
-  width = clamp(164 + actions.length * 112, 280, 604);
+  width = clamp(200 + actions.length * 136, 300, 680);
   x = (ui.width - width) / 2;
-  cutPanel(ui, x, ui.height - 70, width, 60, '#211814e8', '#b98a4c', 7);
-  ui.label(object.label, x + 16, ui.height - 52, 10, '#d8ba78', 'left', ui.theme.fonts.title, 126);
+  uiArt.drawPanel(ui, 'prompt', x, ui.height - 70, width, 60, { fill: '#ead8adef', stroke: '#b98a4c' });
+  uiArt.drawIcon(ui, object.role, x + 22, ui.height - 49, 15, '#8f3e31');
+  ui.label(object.label, x + 36, ui.height - 52, 10, '#5b3928', 'left', ui.theme.fonts.title, 108);
   if (!actions.length) {
-    ui.label('当前时段没有需要处理的事务', x + 154, ui.height - 40, 11, '#f0dfbd', 'left', ui.theme.fonts.body);
+    ui.label('当前时段没有需要处理的事务', x + 154, ui.height - 40, 11, '#4d3b30', 'left', ui.theme.fonts.body);
   } else {
-    buttonWidth = Math.min(118, Math.floor((width - 166) / actions.length) - 8);
+    buttonWidth = Math.min(118, Math.floor((width - 208) / actions.length) - 8);
     for (index = 0; index < actions.length; index += 1) {
       actionButton(
         ui,
@@ -156,7 +156,7 @@ function drawActionTray(ui, state) {
     }
   }
   ui.hitArea({ type: 'innSceneDismiss' }, x + width - 42, ui.height - 68, 40, 40);
-  ui.label('×', x + width - 22, ui.height - 49, 16, '#d9c9a5', 'center', ui.theme.fonts.title);
+  uiArt.drawIcon(ui, 'close', x + width - 22, ui.height - 49, 14, '#76543a');
 }
 
 function modalFrame(ui, title, subtitle) {
@@ -165,20 +165,20 @@ function modalFrame(ui, title, subtitle) {
   var width = ui.width - 264;
   var height = 246;
   ui.rect(0, SCENE_Y, ui.width, ui.height - SCENE_Y, '#18110dcc');
-  cutPanel(ui, x + 4, y + 5, width, height, '#120d0ac2', null, 10);
-  cutPanel(ui, x, y, width, height, '#f2e2b9', '#7d5a3d', 10);
-  ui.rect(x + 14, y + 14, 4, height - 28, '#a74335');
-  ui.label(title, x + 32, y + 34, 18, '#a74335', 'left', ui.theme.fonts.title, width - 80);
-  ui.label(subtitle || '', x + 32, y + 58, 10, '#6d5848', 'left', ui.theme.fonts.body, width - 64);
+  uiArt.drawPanel(ui, 'dialogue', x, y, width, height, { fill: '#f2e2b9', stroke: '#7d5a3d' });
+  uiArt.drawIcon(ui, 'quest', x + 30, y + 35, 18, '#a74335');
+  ui.label(title, x + 48, y + 34, 18, '#a74335', 'left', ui.theme.fonts.title, width - 96);
+  ui.label(subtitle || '', x + 48, y + 58, 10, '#6d5848', 'left', ui.theme.fonts.body, width - 82);
   ui.hitArea({ type: 'noop' }, 0, SCENE_Y, ui.width, ui.height - SCENE_Y);
   return { x: x, y: y, width: width, height: height };
 }
 
 function modalChoice(ui, action, x, y, width, title, tone) {
-  var pressed = ui.pressed && ui.pressed(action);
-  cutPanel(ui, x, y + (pressed ? 2 : 0), width, 44, tone || '#ead5a5', '#76583d', 5);
-  ui.label(title, x + width / 2, y + 22 + (pressed ? 2 : 0), 11, '#30231c', 'center', ui.theme.fonts.body, width - 12);
-  ui.hitArea(action, x, y, width, 44);
+  uiArt.drawSealButton(ui, action, x, y, width, 44, title, {
+    primary: tone === '#d6aa4a' || tone === '#a74435',
+    icon: 'hand',
+    size: 11,
+  });
 }
 
 function drawPurchase(ui, game, frame) {
@@ -268,6 +268,7 @@ function drawService(ui, state) {
   var scene = state.innScene || {};
   var step = management.currentServiceStep(state);
   var event;
+  var guest;
   var game;
   var round;
   var frame;
@@ -284,6 +285,19 @@ function drawService(ui, state) {
       maxLines: 3,
       color: '#3a2c24',
     });
+    guest = find(management.data.guests, event.guestId);
+    if (guest) {
+      ui.label(
+        guest.name + '  ·  偏好 ' + guest.prefers.join(' / ') + '  ·  预算 ' + guest.budget + ' 文',
+        frame.x + 32,
+        frame.y + 151,
+        10,
+        '#765b43',
+        'left',
+        ui.theme.fonts.body,
+        frame.width - 64
+      );
+    }
     choices = event.choices || [];
     choices.slice(0, 3).forEach(function (choice, index) {
       var width = Math.floor((frame.width - 80 - Math.max(0, choices.length - 1) * 12) / Math.min(3, choices.length));

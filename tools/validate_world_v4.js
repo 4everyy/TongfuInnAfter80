@@ -41,6 +41,31 @@ function imageSize(file) {
       offset += Math.max(2, length + 2);
     }
   }
+  if (data.length >= 30 && data.toString('ascii', 0, 4) === 'RIFF' && data.toString('ascii', 8, 12) === 'WEBP') {
+    const chunk = data.toString('ascii', 12, 16);
+    if (chunk === 'VP8X') {
+      return {
+        width: 1 + data.readUIntLE(24, 3),
+        height: 1 + data.readUIntLE(27, 3),
+        alpha: (data[20] & 0x10) !== 0
+      };
+    }
+    if (chunk === 'VP8 ' && data.length >= 30) {
+      return {
+        width: data.readUInt16LE(26) & 0x3fff,
+        height: data.readUInt16LE(28) & 0x3fff,
+        alpha: false
+      };
+    }
+    if (chunk === 'VP8L' && data.length >= 25 && data[20] === 0x2f) {
+      const bits = data.readUInt32LE(21);
+      return {
+        width: 1 + (bits & 0x3fff),
+        height: 1 + ((bits >> 14) & 0x3fff),
+        alpha: true
+      };
+    }
+  }
   return null;
 }
 
@@ -140,7 +165,7 @@ function validateArt() {
     const source = art.sprite || art.atlas || art.portrait;
     assert(!!source, `${id} NPC没有可绘制资源`);
     if (!source) return;
-    const file = path.join(runtimeArtRoot, source);
+    const file = artFile(source);
     assert(fs.existsSync(file), `${id} NPC资源不存在: ${source}`);
     if (!fs.existsSync(file)) return;
     const size = imageSize(file);

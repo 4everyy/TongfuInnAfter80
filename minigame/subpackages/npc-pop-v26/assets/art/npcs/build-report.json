@@ -1,0 +1,262 @@
+{
+  "count": 36,
+  "frame": {
+    "width": 192,
+    "height": 256,
+    "footY": 244
+  },
+  "items": [
+    {
+      "id": "herbalist-qiu",
+      "source": "group-a.png",
+      "cell": 0,
+      "width": 151,
+      "height": 236
+    },
+    {
+      "id": "opera-lady-su",
+      "source": "group-a.png",
+      "cell": 1,
+      "width": 115,
+      "height": 236
+    },
+    {
+      "id": "coppersmith-han",
+      "source": "group-a.png",
+      "cell": 2,
+      "width": 146,
+      "height": 236
+    },
+    {
+      "id": "noodle-vendor-ma",
+      "source": "group-a.png",
+      "cell": 3,
+      "width": 174,
+      "height": 217
+    },
+    {
+      "id": "porter-alu",
+      "source": "group-a.png",
+      "cell": 4,
+      "width": 100,
+      "height": 236
+    },
+    {
+      "id": "storyteller-shen",
+      "source": "group-a.png",
+      "cell": 5,
+      "width": 117,
+      "height": 236
+    },
+    {
+      "id": "seamstress-wen",
+      "source": "group-a.png",
+      "cell": 6,
+      "width": 98,
+      "height": 236
+    },
+    {
+      "id": "umbrella-maker-luo",
+      "source": "group-a.png",
+      "cell": 7,
+      "width": 80,
+      "height": 236
+    },
+    {
+      "id": "courier-aqi",
+      "source": "group-a.png",
+      "cell": 8,
+      "width": 104,
+      "height": 236
+    },
+    {
+      "id": "salt-merchant-xu",
+      "source": "group-b.png",
+      "cell": 0,
+      "width": 91,
+      "height": 236
+    },
+    {
+      "id": "grain-inspector-lin",
+      "source": "group-b.png",
+      "cell": 1,
+      "width": 129,
+      "height": 236
+    },
+    {
+      "id": "boatwoman-he",
+      "source": "group-b.png",
+      "cell": 2,
+      "width": 131,
+      "height": 236
+    },
+    {
+      "id": "ticket-clerk-fang",
+      "source": "group-b.png",
+      "cell": 3,
+      "width": 91,
+      "height": 236
+    },
+    {
+      "id": "scale-mender-ge",
+      "source": "group-b.png",
+      "cell": 4,
+      "width": 135,
+      "height": 236
+    },
+    {
+      "id": "spice-broker-rong",
+      "source": "group-b.png",
+      "cell": 5,
+      "width": 131,
+      "height": 236
+    },
+    {
+      "id": "warehouse-foreman-dou",
+      "source": "group-b.png",
+      "cell": 6,
+      "width": 125,
+      "height": 236
+    },
+    {
+      "id": "scribe-pei",
+      "source": "group-b.png",
+      "cell": 7,
+      "width": 100,
+      "height": 236
+    },
+    {
+      "id": "caravan-matriarch-shao",
+      "source": "group-b.png",
+      "cell": 8,
+      "width": 123,
+      "height": 236
+    },
+    {
+      "id": "bridge-mason-zhao",
+      "source": "group-c.png",
+      "cell": 0,
+      "width": 111,
+      "height": 236
+    },
+    {
+      "id": "woodcutter-yun",
+      "source": "group-c.png",
+      "cell": 1,
+      "width": 114,
+      "height": 236
+    },
+    {
+      "id": "ferryman-wu",
+      "source": "group-c.png",
+      "cell": 2,
+      "width": 133,
+      "height": 236
+    },
+    {
+      "id": "boat-tracker-qiao",
+      "source": "group-c.png",
+      "cell": 3,
+      "width": 120,
+      "height": 236
+    },
+    {
+      "id": "paper-apprentice-mo",
+      "source": "group-c.png",
+      "cell": 4,
+      "width": 127,
+      "height": 236
+    },
+    {
+      "id": "night-watchman-lai",
+      "source": "group-c.png",
+      "cell": 5,
+      "width": 107,
+      "height": 236
+    },
+    {
+      "id": "retired-guard-cao",
+      "source": "group-c.png",
+      "cell": 6,
+      "width": 115,
+      "height": 236
+    },
+    {
+      "id": "cartwright-lu",
+      "source": "group-c.png",
+      "cell": 7,
+      "width": 151,
+      "height": 236
+    },
+    {
+      "id": "fisherman-jiang",
+      "source": "group-c.png",
+      "cell": 8,
+      "width": 122,
+      "height": 236
+    },
+    {
+      "id": "physician-ning",
+      "source": "group-d.png",
+      "cell": 0,
+      "width": 123,
+      "height": 236
+    },
+    {
+      "id": "fortune-reader-yan",
+      "source": "group-d.png",
+      "cell": 1,
+      "width": 103,
+      "height": 236
+    },
+    {
+      "id": "runaway-apprentice-tang",
+      "source": "group-d.png",
+      "cell": 2,
+      "width": 101,
+      "height": 236
+    },
+    {
+      "id": "debt-collector-xiao",
+      "source": "group-d.png",
+      "cell": 3,
+      "width": 112,
+      "height": 236
+    },
+    {
+      "id": "refugee-father-gu",
+      "source": "group-d.png",
+      "cell": 4,
+      "width": 102,
+      "height": 236
+    },
+    {
+      "id": "tea-picker-qing",
+      "source": "group-d.png",
+      "cell": 5,
+      "width": 131,
+      "height": 236
+    },
+    {
+      "id": "cook-helper-pang",
+      "source": "group-d.png",
+      "cell": 6,
+      "width": 164,
+      "height": 236
+    },
+    {
+      "id": "locksmith-qi",
+      "source": "group-d.png",
+      "cell": 7,
+      "width": 107,
+      "height": 236
+    },
+    {
+      "id": "map-seller-ye",
+      "source": "group-d.png",
+      "cell": 8,
+      "width": 154,
+      "height": 236
+    }
+  ]
+}

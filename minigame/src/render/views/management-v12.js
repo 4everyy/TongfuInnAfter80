@@ -1,5 +1,6 @@
 var management = require('../../inn/inn');
 var caseFiles = require('../../core/case-files');
+var uiArt = require('../ui-art-v29');
 
 var TOP = 38;
 var FONT = { title: 20, section: 16, body: 12, caption: 10 };
@@ -92,49 +93,19 @@ function cutPanel(ui, x, y, width, height, fill, stroke, cut) {
 }
 
 function tagButton(ui, action, x, y, width, height, title, style) {
-  var pressed = ui.pressed && ui.pressed(action);
-  var drawY = y + (pressed ? 2 : 0);
-  var fill = COLOR.paperLight;
-  var stroke = '#80664d';
-  var text = COLOR.ink;
-  var hitWidth = Math.max(44, width);
-  var hitHeight = Math.max(44, height);
-  if (style === 'primary') {
-    fill = COLOR.cinnabar;
-    stroke = '#6f281f';
-    text = COLOR.paperLight;
-  } else if (style === 'jade') {
-    fill = COLOR.jade;
-    stroke = '#204c44';
-    text = COLOR.paperLight;
-  } else if (style === 'selected') {
-    fill = '#edddb5';
-    stroke = COLOR.cinnabar;
-  } else if (style === 'muted') {
-    fill = '#cfc3a4';
-    stroke = '#9d9176';
-    text = '#776d5d';
-  }
-  if (!pressed && style !== 'flat') {
-    cutPanel(ui, x, y + 2, width, height, '#4a332566', null, 6);
-  }
-  cutPanel(ui, x, drawY, width, height, fill, stroke, 6);
-  if (style === 'selected') ui.rect(x, drawY, 4, height, COLOR.cinnabar);
-  ui.label(title, x + width / 2, drawY + height / 2, FONT.body, text, 'center', ui.theme.fonts.body, width - 12);
-  ui.hitArea(
-    action,
-    x - (hitWidth - width) / 2,
-    y - (hitHeight - height) / 2,
-    hitWidth,
-    hitHeight
-  );
+  uiArt.drawSealButton(ui, action, x, y, width, height, title, {
+    primary: style === 'primary' || style === 'jade',
+    disabled: style === 'muted',
+    icon: style === 'selected' ? 'check' : style === 'primary' ? 'hand' : null,
+    size: FONT.body,
+  });
 }
 
 function iconButton(ui, action, x, y, glyph, tone) {
   var pressed = ui.pressed && ui.pressed(action);
   var drawY = y + (pressed ? 2 : 0);
   ui.roundedRect(x, drawY, 44, 44, 22, tone || COLOR.paperLight, '#80664d');
-  ui.label(glyph, x + 22, drawY + 22, FONT.section, COLOR.ink, 'center', ui.theme.fonts.title);
+  uiArt.drawIcon(ui, glyph === '‹' ? 'back' : glyph, x + 22, drawY + 22, 17, COLOR.ink);
   ui.hitArea(action, x, y, 44, 44);
 }
 
@@ -533,6 +504,144 @@ function currentJob(state, roleId) {
   return null;
 }
 
+var JOB_ICONS = {
+  counter: 'dialogue',
+  service: 'hand',
+  kitchen: 'pot',
+  ledger: 'abacus',
+  rooms: 'key',
+  patrol: 'battle',
+};
+
+var CHARACTER_LAYOUT = {
+  portrait: { x: 158, y: 190 },
+  jobColumns: [360, 490, 620],
+  jobRows: [164, 248],
+  jobHeadingCenter: 490,
+  dividerX: 664,
+  actions: [690, 758],
+};
+
+function traitIcon(label) {
+  var icons = {
+    '识人': 'relationship', '估价': 'abacus', '稳场': 'complete',
+    '侦察': 'investigate', '追踪': 'quest', '疾行': 'exit',
+    '护卫': 'battle', '破局': 'hammer', '威慑': 'warning',
+    '核账': 'abacus', '推理': 'investigate', '说服': 'dialogue',
+    '火候': 'flame', '菜谱': 'quest', '宴席': 'pot',
+  };
+  return icons[label] || 'complete';
+}
+
+function drawCharacterPortrait(ui, id, character, role, centerX, centerY) {
+  var radius = 72;
+  var energy = Math.max(0, Math.min(1, Number(character.energy || 0) / 100));
+  var mood = Math.max(0, Math.min(1, Number(character.mood || 0) / 100));
+  var leftStart = Math.PI * 0.62;
+  var leftSpan = Math.PI * 0.76;
+  var rightStart = -Math.PI * 0.38;
+  var rightSpan = Math.PI * 0.76;
+  var ctx = ui.ctx;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  ctx.fillStyle = '#e8d8b4';
+  ctx.fill();
+  ctx.clip();
+  ui.portrait(id, centerX - radius, centerY - radius, radius * 2);
+  ctx.restore();
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#120d0a99';
+  ctx.beginPath(); ctx.arc(centerX, centerY, radius + 7, leftStart, leftStart + leftSpan); ctx.stroke();
+  ctx.beginPath(); ctx.arc(centerX, centerY, radius + 7, rightStart, rightStart + rightSpan); ctx.stroke();
+  ctx.strokeStyle = '#c96a55';
+  ctx.beginPath(); ctx.arc(centerX, centerY, radius + 7, leftStart, leftStart + leftSpan * energy); ctx.stroke();
+  ctx.strokeStyle = '#70a69a';
+  ctx.beginPath(); ctx.arc(centerX, centerY, radius + 7, rightStart, rightStart + rightSpan * mood); ctx.stroke();
+  ctx.restore();
+  ui.roundedRect(centerX - 78, centerY + 51, 156, 46, 4, '#17100dde');
+  ui.label(role.name, centerX, centerY + 65, 17, COLOR.paperLight, 'center', ui.theme.fonts.title, 144);
+  ui.label(role.role, centerX, centerY + 84, 9, '#cbb994', 'center', ui.theme.fonts.body, 144);
+  uiArt.drawIcon(ui, 'energy', centerX - 58, centerY + 108, 13, '#d9765d');
+  ui.label(String(character.energy), centerX - 44, centerY + 108, 10, COLOR.paperLight, 'left');
+  uiArt.drawIcon(ui, 'mood', centerX + 22, centerY + 108, 13, '#7cb5a8');
+  ui.label(String(character.mood), centerX + 36, centerY + 108, 10, COLOR.paperLight, 'left');
+}
+
+function drawTraitSeal(ui, label, centerX, centerY) {
+  ui.ctx.save();
+  ui.ctx.beginPath();
+  ui.ctx.arc(centerX, centerY, 18, 0, Math.PI * 2);
+  ui.ctx.fillStyle = '#2b211de6';
+  ui.ctx.fill();
+  ui.ctx.strokeStyle = '#b99558';
+  ui.ctx.lineWidth = 1.2;
+  ui.ctx.stroke();
+  ui.ctx.restore();
+  uiArt.drawIcon(ui, traitIcon(label), centerX, centerY, 16, '#e8c979');
+  ui.label(label, centerX, centerY + 28, 9, '#ead9b4', 'center', ui.theme.fonts.body, 58);
+}
+
+function drawJobPlaque(ui, roleId, job, centerX, centerY, selected) {
+  var action = { type: 'assignRole', id: job.id, roleId: roleId };
+  var pressed = ui.pressed && ui.pressed(action);
+  var drawY = centerY + (pressed ? 2 : 0);
+  var radius = selected ? 30 : 27;
+  var pulse = selected ? 1 + Math.sin(Date.now() / 450) * 0.035 : 1;
+  ui.ctx.save();
+  ui.ctx.globalAlpha = selected ? 0.25 : 0.16;
+  ui.ctx.beginPath();
+  ui.ctx.arc(centerX, drawY + 3, radius + 7, 0, Math.PI * 2);
+  ui.ctx.fillStyle = selected ? COLOR.gold : '#120d0a';
+  ui.ctx.fill();
+  ui.ctx.restore();
+  ui.ctx.save();
+  ui.ctx.translate(centerX, drawY);
+  ui.ctx.scale(pulse, pulse);
+  ui.ctx.beginPath();
+  ui.ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ui.ctx.fillStyle = selected ? COLOR.jade : '#ead7aa';
+  ui.ctx.fill();
+  ui.ctx.strokeStyle = selected ? '#e9c675' : '#896746';
+  ui.ctx.lineWidth = selected ? 2.5 : 1.2;
+  ui.ctx.stroke();
+  ui.ctx.restore();
+  uiArt.drawIcon(ui, JOB_ICONS[job.id] || 'party', centerX, drawY, 23, selected ? '#f7e7bd' : COLOR.cinnabar);
+  if (selected) {
+    ui.ctx.save();
+    ui.ctx.beginPath();
+    ui.ctx.arc(centerX + 22, drawY - 21, 8, 0, Math.PI * 2);
+    ui.ctx.fillStyle = COLOR.cinnabar;
+    ui.ctx.fill();
+    ui.ctx.restore();
+    uiArt.drawIcon(ui, 'check', centerX + 22, drawY - 21, 8, COLOR.paperLight);
+  }
+  ui.label(job.name, centerX, centerY + 39, 11, COLOR.paperLight, 'center', ui.theme.fonts.title, 78);
+  ui.label(job.trait, centerX, centerY + 54, 8, '#c8b791', 'center', ui.theme.fonts.body, 72);
+  ui.hitArea(action, centerX - 35, centerY - 34, 70, 82);
+}
+
+function drawRoleCommand(ui, action, icon, label, centerX, centerY, primary, disabled) {
+  var pressed = !disabled && ui.pressed && ui.pressed(action);
+  var drawY = centerY + (pressed ? 2 : 0);
+  var tone = disabled ? '#71675a' : primary ? COLOR.cinnabar : COLOR.jade;
+  ui.ctx.save();
+  ui.ctx.globalAlpha = disabled ? 0.55 : 1;
+  ui.ctx.beginPath();
+  ui.ctx.arc(centerX, drawY, 25, 0, Math.PI * 2);
+  ui.ctx.fillStyle = tone;
+  ui.ctx.fill();
+  ui.ctx.strokeStyle = disabled ? '#948875' : '#e0be70';
+  ui.ctx.lineWidth = 1.5;
+  ui.ctx.stroke();
+  ui.ctx.restore();
+  uiArt.drawIcon(ui, disabled ? 'lock' : icon, centerX, drawY, 21, COLOR.paperLight);
+  ui.label(label, centerX, centerY + 36, 9, disabled ? '#a99b84' : '#ead9b4', 'center', ui.theme.fonts.body, 66);
+  if (!disabled) ui.hitArea(action, centerX - 30, centerY - 30, 60, 74);
+}
+
 function drawCharacter(ui, state) {
   var id = state.managementRoleId || 'zhangdeng';
   var character = state.characters[id] || state.characters.zhangdeng;
@@ -542,27 +651,52 @@ function drawCharacter(ui, state) {
   var job;
   var x;
   var y;
-  drawPageBackground(ui, 'character');
-  drawPageHeader(ui, state, role.name, role.role + ' · 点击岗位直接安排');
-  cutPanel(ui, 62, 104, 220, 224, COLOR.paper, '#8b7153', 10);
-  ui.portrait(id, 92, 128, 160);
-  ui.label('精力 ' + character.energy + '　心情 ' + character.mood, 172, 307, FONT.body, COLOR.jade, 'center');
+  var background = sceneImage(ui, state);
+  var gradient;
+  var traits = role.traits || [];
+  if (background) ui.cover(background, 0, TOP, ui.width, ui.height - TOP);
+  else drawPageBackground(ui, 'character');
+  phaseTint(ui, state);
+  ui.rect(0, TOP, ui.width, ui.height - TOP, '#160f0caa');
+  gradient = ui.ctx.createLinearGradient(250, 0, 810, 0);
+  gradient.addColorStop(0, '#160f0c20');
+  gradient.addColorStop(0.25, '#160f0c9c');
+  gradient.addColorStop(1, '#160f0ce8');
+  ui.ctx.fillStyle = gradient;
+  ui.ctx.fillRect(250, TOP, 594, ui.height - TOP);
+  drawPageHeader(ui, state, '人物名帖', '查看状态、安排岗位与人物行动');
+  drawCharacterPortrait(ui, id, character, role, CHARACTER_LAYOUT.portrait.x, CHARACTER_LAYOUT.portrait.y);
+  for (index = 0; index < Math.min(3, traits.length); index += 1) {
+    drawTraitSeal(ui, traits[index], 92 + index * 66, 334);
+  }
 
-  cutPanel(ui, 310, 104, 474, 224, '#eadbb5', '#8b7153', 10);
-  ui.label('今日岗位', 338, 132, FONT.section, COLOR.ink, 'left', ui.theme.fonts.title);
-  ui.label(assigned ? find(management.data.jobs, assigned).name : '尚未安排', 754, 132, FONT.body, COLOR.cinnabar, 'right');
+  uiArt.drawIcon(ui, 'party', CHARACTER_LAYOUT.jobHeadingCenter - 39, 112, 20, COLOR.gold);
+  ui.label('岗位印章', CHARACTER_LAYOUT.jobHeadingCenter + 16, 112, FONT.section, COLOR.paperLight, 'center', ui.theme.fonts.title, 74);
+  if (assigned) {
+    uiArt.drawStatusChip(ui, JOB_ICONS[assigned] || 'check', find(management.data.jobs, assigned).name, 674, 99, 100, COLOR.jade, { center: true });
+  } else {
+    uiArt.drawStatusChip(ui, 'warning', '尚未安排', 666, 99, 108, COLOR.cinnabar, { center: true });
+  }
+  ui.rect(312, 135, 344, 1, '#e3cf9b42');
+  ui.rect(CHARACTER_LAYOUT.dividerX, 143, 1, 150, '#e3cf9b30');
   for (index = 0; index < management.data.jobs.length; index += 1) {
     job = management.data.jobs[index];
-    x = 338 + (index % 3) * 140;
-    y = 158 + Math.floor(index / 3) * 56;
-    tagButton(ui, { type: 'assignRole', id: job.id, roleId: id }, x, y, 124, 44, job.name, assigned === job.id ? 'selected' : 'flat');
+    x = CHARACTER_LAYOUT.jobColumns[index % 3];
+    y = CHARACTER_LAYOUT.jobRows[Math.floor(index / 3)];
+    drawJobPlaque(ui, id, job, x, y, assigned === job.id);
   }
-  if (state.episodes.pendingId && management.data.characterEpisodes[state.episodes.pendingId].roleId === id) {
-    tagButton(ui, { type: 'episodeOpen' }, 338, 276, 194, 44, '人物剧情', 'primary');
-  }
-  if (character.recruited) {
-    tagButton(ui, { type: 'partyToggle', id: id }, 548, 276, 206, 44, character.inParty ? '移出战斗队伍' : '加入战斗队伍', 'flat');
-  }
+  var hasEpisode = state.episodes.pendingId && management.data.characterEpisodes[state.episodes.pendingId].roleId === id;
+  drawRoleCommand(ui, { type: 'episodeOpen' }, 'relationship', hasEpisode ? '人物剧情' : '暂无剧情', CHARACTER_LAYOUT.actions[0], 332, true, !hasEpisode);
+  drawRoleCommand(
+    ui,
+    { type: 'partyToggle', id: id },
+    'party',
+    character.recruited ? (character.inParty ? '移出队伍' : '加入队伍') : '尚未招募',
+    CHARACTER_LAYOUT.actions[1],
+    332,
+    false,
+    !character.recruited
+  );
 }
 
 function drawPage(ui, state) {
@@ -588,32 +722,35 @@ function drawEventModal(ui, state) {
   if (!modal) return;
   ui.hitArea({ type: 'noop' }, 0, 0, ui.width, ui.height);
   ui.rect(0, 0, ui.width, ui.height, '#17110ec7');
-  cutPanel(ui, 82, 64, 680, 262, COLOR.paperLight, '#8b7153', 10);
-  ui.rect(82, 64, 6, 262, COLOR.cinnabar);
+  uiArt.drawPanel(ui, 'dialogue', 82, 64, 680, 262, { fill: COLOR.paperLight, stroke: '#8b7153' });
   if (modal.kind === 'episode') {
     episode = management.data.characterEpisodes[modal.id];
     role = ui.role(episode.roleId);
-    ui.portrait(episode.roleId, 110, 92, 112);
-    ui.label(role.name + ' · ' + episode.title, 246, 105, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
+    uiArt.drawPortraitFrame(ui, episode.roleId, 104, 82, 128, 156, { label: role.name, labelSize: 10 });
+    uiArt.drawIcon(ui, 'relationship', 250, 105, 20, COLOR.cinnabar);
+    ui.label(episode.title, 270, 105, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
     paragraph(ui, episode.text, 246, 146, 480, 3, COLOR.ink);
     for (index = 0; index < episode.choices.length; index += 1) {
       tagButton(ui, { type: 'episodeChoice', index: index }, 246 + index * 236, 242, 218, 48, episode.choices[index].label, index === 0 ? 'primary' : 'flat');
     }
   } else if (modal.kind === 'settlement') {
     result = modal.result;
-    ui.label('第 ' + result.day + ' 日结算 · ' + result.grade + ' 级', 116, 104, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
+    uiArt.drawIcon(ui, 'reward', 116, 104, 22, COLOR.cinnabar);
+    ui.label('第 ' + result.day + ' 日结算 · ' + result.grade + ' 级', 142, 104, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
     ui.label(result.title, 116, 142, FONT.section, COLOR.ink, 'left', ui.theme.fonts.title);
     ui.label('营业与客房收入 ' + result.income + ' 文', 116, 184, FONT.body, COLOR.jade, 'left');
     ui.label('帮工支出 ' + result.helperCost + ' 文　满意 ' + result.satisfaction, 116, 214, FONT.body, COLOR.wood, 'left');
     ui.label('口碑 ' + result.reputation + '　秩序 ' + result.order, 116, 244, FONT.body, COLOR.ink, 'left');
     tagButton(ui, { type: 'managementEventClose' }, 548, 248, 176, 52, '开始新一天', 'primary');
   } else if (modal.kind === 'confirm') {
-    ui.label(modal.title, 116, 112, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
+    uiArt.drawIcon(ui, 'warning', 118, 112, 22, COLOR.cinnabar);
+    ui.label(modal.title, 144, 112, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
     paragraph(ui, modal.text, 116, 158, 590, 4, COLOR.ink);
     tagButton(ui, { type: 'managementEventClose' }, 390, 248, 150, 48, '再想想', 'flat');
     tagButton(ui, modal.confirmAction, 560, 248, 164, 48, modal.confirmLabel || '确认', 'primary');
   } else {
-    ui.label(modal.title || '事件结果', 116, 112, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
+    uiArt.drawIcon(ui, 'complete', 118, 112, 22, COLOR.jade);
+    ui.label(modal.title || '事件结果', 144, 112, FONT.title, COLOR.cinnabar, 'left', ui.theme.fonts.title);
     paragraph(ui, modal.text || '', 116, 158, 590, 4, COLOR.ink);
     tagButton(ui, { type: 'managementEventClose' }, 548, 248, 176, 52, '记下结果', 'primary');
   }

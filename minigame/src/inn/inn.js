@@ -1,4 +1,6 @@
 var data = require('../../data/management');
+var coreLoopData = require('../../data/core-loop-v28');
+var coreLoop = require('./core-loop-v28');
 var deep34 = require('../../data/season1-deep');
 var deep56 = require('../../data/season1-deep-56');
 var deep78 = require('../../data/season1-deep-78');
@@ -20,6 +22,8 @@ var PHASES = ['morning', 'noon', 'evening'];
 var PHASE_ACTION_LIMIT = 2;
 var FIRST_CHAPTER_ROLES = ['zhangdeng'];
 var STOCK_KEYS = ['staple', 'vegetable', 'meat', 'tea'];
+
+coreLoopData.apply(data);
 
 deepContent.operationEvents.forEach(function (event) {
   data.serviceEvents[event.id] = Object.assign({}, event, {
@@ -230,6 +234,7 @@ function ensure(state) {
   state.managementRoleId = state.managementRoleId || 'zhangdeng';
   state.managementSeenObjects = Array.isArray(state.managementSeenObjects) ? state.managementSeenObjects : [];
   state.managementNavOpen = !!state.managementNavOpen;
+  coreLoop.ensure(state);
   syncQuestStatus(state);
   syncPendingEpisode(state);
   return state;
@@ -265,7 +270,7 @@ function dayScript(state) {
       deepChapter: chapterNumber,
     };
   }
-  if (day <= data.dayScripts.length) return data.dayScripts[day - 1];
+  if (day <= data.dayScripts.length) return coreLoop.decorateDayScript(state, data.dayScripts[day - 1]);
   eventIds = Object.keys(data.serviceEvents);
   offset = ((day - data.dayScripts.length - 1) * 2) % eventIds.length;
   games = ['order', 'ledger', 'rooms'];
@@ -491,6 +496,7 @@ function performPrep(state, id, variant) {
   var action = find(data.prepActions, id);
   var effects;
   var purchaseCost;
+  var purchaseDiscount = 0;
   var purchase;
   ensure(state);
   if (!action || state.calendar.phase !== 'morning') return false;
@@ -505,7 +511,8 @@ function performPrep(state, id, variant) {
   effects = action.effects;
   if (id === 'purchase') {
     purchase = purchaseVariant(state, variant);
-    purchaseCost = caseFiles.purchaseCost(state, purchase.baseCost);
+    purchaseDiscount = coreLoop.purchaseDiscount(state);
+    purchaseCost = Math.max(0, caseFiles.purchaseCost(state, purchase.baseCost) - purchaseDiscount);
     effects = Object.assign({}, action.effects, { coin: -purchaseCost, stock: purchase.stock });
   }
   if (!canApply(state, effects)) {
@@ -514,6 +521,7 @@ function performPrep(state, id, variant) {
   }
   rememberMorningPlan(state, action.name);
   applyEffects(state, effects);
+  if (id === 'purchase' && purchaseDiscount > 0) coreLoop.consumePurchaseDiscount(state);
   state.dailyPlan.prepActions.push(id);
   state.calendar.actionsUsed += 1;
   state.toast = action.name + '完成。' + (id === 'purchase'
@@ -657,7 +665,7 @@ function startShift(state) {
     wave: 1,
     queue: [
       { kind: 'event', id: script.serviceEvents[0] },
-      { kind: 'minigame', id: script.miniGame },
+      { kind: 'minigame', id: script.miniGame, guestId: script.miniGameGuestId || 'regular' },
       { kind: 'event', id: script.serviceEvents[1] },
     ],
     income: 0,
@@ -688,17 +696,21 @@ function assignmentBonus(state, choice) {
   return false;
 }
 
-function addWaveIncomeAndFood(state) {
-  var menu = state.dailyPlan.menu;
-  var id = menu[state.service.index % menu.length];
+function addWaveIncomeAndFood(state, event) {
+  var plan = coreLoop.servicePlan(state, event || {}, data);
+  var id = plan.dish.id;
   var served = consumeDish(state, id);
   var price = dishPrice(state, id);
+  var feedback = coreLoop.serviceFeedback(state, plan, served, price);
   if (served) state.service.income += price + Math.max(0, state.dailyPlan.guestBonus * 2);
   else {
-    state.service.satisfaction -= 2;
     state.inn.order = clamp(state.inn.order - 3, 0, 100);
     state.service.log = '食材不足，这一轮只能临时换菜。';
   }
+  state.service.satisfaction += feedback.satisfaction;
+  state.service.lastDishFeedback = feedback.text;
+  coreLoop.recordService(state, plan, served, price, feedback);
+  return feedback;
 }
 
 function finishServiceStep(state, outcome) {
@@ -723,8 +735,9 @@ function resolveServiceEvent(state, choiceIndex) {
   var event = step && step.kind === 'event' ? data.serviceEvents[step.id] : null;
   var choice = event && event.choices[choiceIndex];
   var bonus;
+  var feedback;
   if (!choice) return false;
-  addWaveIncomeAndFood(state);
+  feedback = addWaveIncomeAndFood(state, event);
   applyEffects(state, choice.effects, { deferCoin: true });
   if (choice.tendency && state.campaign && state.campaign.tendencies[choice.tendency] != null) {
     state.campaign.tendencies[choice.tendency] += 1;
@@ -733,7 +746,9 @@ function resolveServiceEvent(state, choiceIndex) {
     randomEvents.resolve(state, event.id, choice.id || choiceIndex);
   }
   bonus = assignmentBonus(state, choice);
+  coreLoop.recordChoice(state, event, choice, choiceIndex);
   state.service.log = choice.result + (bonus ? ' 岗位专长生效。' : '');
+  state.service.log += ' ' + feedback.text;
   finishServiceStep(state, { id: event.id, choice: choiceIndex, bonus: bonus });
   state.managementEvent = {
     kind: 'result',
@@ -751,13 +766,14 @@ function ensureMiniGame(state) {
 }
 
 function miniGameChoice(state, choiceIndex) {
+  var step = currentServiceStep(state);
   var game = ensureMiniGame(state);
   var round = game && game.rounds[game.round];
   if (!round) return false;
   if (choiceIndex === round.correct) game.score += 1;
   game.round += 1;
   if (game.round >= game.rounds.length) {
-    addWaveIncomeAndFood(state);
+    addWaveIncomeAndFood(state, { guestId: step.guestId || 'regular' });
     state.service.satisfaction += game.score + 1;
     state.service.log = game.name + '完成：' + game.score + '/' + game.rounds.length + '。';
     finishServiceStep(state, { id: game.id, score: game.score });
@@ -843,6 +859,7 @@ function settleDay(state) {
     order: state.inn.order,
     grade: grade,
   };
+  coreLoop.recordSettlement(state, result);
   state.inn.history.push(result);
   if (state.inn.history.length > 14) state.inn.history.splice(0, state.inn.history.length - 14);
   state.inn.lastSettledDay = day;

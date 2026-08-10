@@ -4,6 +4,7 @@ const root = path.resolve(__dirname, '..');
 const content = require(path.join(root, 'minigame/data/content'));
 const store = require(path.join(root, 'minigame/src/core/store'));
 const world = require(path.join(root, 'minigame/src/world/explore'));
+const manifest = require(path.join(root, 'minigame/assets/art/manifest'));
 
 const errors = [];
 
@@ -19,18 +20,22 @@ function flagsState() {
   return state;
 }
 
+function validateAllMapAccess() {
+  const state = flagsState();
+  world.syncMapAccess(state);
+  content.maps.forEach((map) => {
+    assert(state.unlockedMaps[map.id], `Fresh save did not unlock map: ${map.id}`);
+    map.exits.forEach((exit) => {
+      assert(world.exitUnlocked(state, exit), `Fresh save locked exit: ${map.id}.${exit.id}`);
+    });
+  });
+}
+
 function validateProgressiveAccess() {
   const state = flagsState();
   world.syncMapAccess(state);
-  ['inn', 'yard', 'street'].forEach((id) => assert(state.unlockedMaps[id], `新档没有开放 ${id}`));
-  ['locust_lane', 'tea_shed', 'east_gate', 'stone_bridge'].forEach((id) => {
-    assert(!state.unlockedMaps[id], `新档过早开放 ${id}`);
-  });
-
-  state.flags.doorwayDisturbanceResolved = true;
-  world.syncMapAccess(state);
-  ['locust_lane', 'tea_shed', 'east_gate'].forEach((id) => {
-    assert(state.unlockedMaps[id], `开场完成后没有开放 ${id}`);
+  ['inn', 'yard', 'street', 'locust_lane', 'tea_shed', 'east_gate'].forEach((id) => {
+    assert(state.unlockedMaps[id], `新档没有开放公共地图 ${id}`);
   });
   assert(!state.unlockedMaps.stone_bridge, '接案前过早开放石桥');
 
@@ -43,6 +48,87 @@ function validateProgressiveAccess() {
   assert(state.unlockedMaps.stone_bridge, '已经发现的石桥没有永久保留');
 }
 
+function pointInsideZone(point, zone) {
+  return point.x >= zone.x && point.x <= zone.x + zone.width
+    && point.y >= zone.y && point.y <= zone.y + zone.height;
+}
+
+function validateReachableExits() {
+  content.maps.forEach((map) => {
+    const points = reachablePoints(map, ['main']);
+    map.exits.forEach((exit) => {
+      assert(points.some((point) => pointInsideZone(point, exit.zone)), `${map.id}.${exit.id} 无法从出生点走进出口区域`);
+    });
+  });
+}
+
+function validateInnCounterOcclusion() {
+  const inn = world.map('inn');
+  const counter = inn.obstacles.find((obstacle) => obstacle.id === 'counter');
+  const stairs = inn.obstacles.find((obstacle) => obstacle.id === 'stairs');
+  const waiter = inn.npcs.find((npc) => npc.id === 'wuchen-inn');
+  const streetSpawn = inn.spawns.streetDoor;
+  const streetExit = inn.exits.find((exit) => exit.id === 'to-street');
+  assert(counter && counter.occluderRise === 0, '客栈柜台遮挡层仍会覆盖柜台后人物头部');
+  assert(waiter && waiter.y > counter.polygon[0][1] && waiter.y < counter.sortY, '白展堂脚底没有落在柜台后有效遮挡区');
+  assert(waiter && waiter.y >= 278, '白展堂脚底仍停在柜台台面高度');
+  assert(stairs && !world.isWalkable(inn, { x: 810, y: 294 }), '客栈楼梯底部台阶仍可被人物踏入');
+  assert(world.isWalkable(inn, { x: 920, y: 318 }), '楼梯碰撞错误封死了通往十字街的地面通道');
+  assert(streetSpawn && streetExit && !pointInsideZone(streetSpawn, streetExit.zone), '十字街返回客栈的落点仍在返程出口内');
+}
+
+function validateExitRearm() {
+  const state = flagsState();
+  world.spawn(state, 'inn', 'streetDoor');
+  state.exitCooldown = 0;
+  state.position = { x: 950, y: 304 };
+  world.update(state, { move: { x: 0, y: 0 } }, 0.016);
+  assert(!state.sceneTransition, '刚到达场景后仍会在出口区内立即反跳');
+  state.position = { x: 900, y: 304 };
+  world.update(state, { move: { x: 0, y: 0 } }, 0.016);
+  assert(state.exitRearmMapId === null, '离开出口区后没有重新开启场景切换');
+  state.position = { x: 950, y: 304 };
+  world.update(state, { move: { x: 0, y: 0 } }, 0.016);
+  assert(!!state.sceneTransition && state.sceneTransition.targetMapId === 'street', '主动重新进入出口后没有正常切换场景');
+}
+
+function validateNpcScenePlacement() {
+  content.maps.forEach((map) => {
+    map.npcs.forEach((npc) => {
+      if (npc.behindObstacleId) {
+        const obstacle = map.obstacles.find((item) => item.id === npc.behindObstacleId);
+        const props = manifest.maps[map.id] && manifest.maps[map.id].props || [];
+        assert(!!obstacle, `${map.id}.${npc.id} 引用不存在的遮挡物 ${npc.behindObstacleId}`);
+        assert(npc.allowBlockedPlacement === true, `${map.id}.${npc.id} 设施后站位没有明确允许阻挡区`);
+        assert(npc.shadowAlpha === 0, `${map.id}.${npc.id} 设施后站位仍会把脚底阴影画在家具上`);
+        assert(
+          !!(obstacle && obstacle.occluderPolygon) || props.some((prop) => prop.obstacleId === npc.behindObstacleId),
+          `${map.id}.${npc.id} 缺少与设施对应的前景遮挡`
+        );
+      }
+      Object.keys(map.spawns).forEach((spawnId) => {
+        const spawn = map.spawns[spawnId];
+        const gap = Math.hypot(spawn.x - npc.x, spawn.y - npc.y);
+        assert(gap >= 36, `${map.id}.${spawnId} 与 ${npc.id} 出生时重叠`);
+      });
+    });
+  });
+}
+
+function validateNpcFootCollision() {
+  const map = {
+    id: 'npc-collision-test',
+    walkable: [[[0, 0], [180, 0], [180, 120], [0, 120]]],
+    obstacles: [],
+    npcs: [{ id: 'clerk', x: 90, y: 60 }],
+  };
+  const state = { flags: {}, party: [] };
+  assert(!world.isWalkable(map, { x: 90, y: 60 }, null, state), '主角仍可从 NPC 脚底直接穿过');
+  assert(world.isWalkable(map, { x: 130, y: 60 }, null, state), 'NPC 碰撞范围过大，阻塞了正常绕行空间');
+  map.npcs[0].blocksMovement = false;
+  assert(world.isWalkable(map, { x: 90, y: 60 }, null, state), '明确的非阻挡 NPC 没有放行');
+}
+
 function validateChapterTwoEntrances() {
   const inn = world.map('inn');
   const briefing = inn.hotspots.find((spot) => spot.id === 'late-letter-briefing');
@@ -51,8 +137,8 @@ function validateChapterTwoEntrances() {
   assert(!!ending && ending.dialogue === 'late-letter-return', '第二章缺少返店结算热点');
 }
 
-function reachablePoints(map) {
-  const step = 8;
+function reachablePoints(map, spawnIds) {
+  const step = 4;
   const queue = [];
   const visited = {};
   const result = [];
@@ -73,7 +159,7 @@ function reachablePoints(map) {
     result.push(point);
   }
 
-  Object.keys(map.spawns).forEach((spawnId) => push(map.spawns[spawnId]));
+  (spawnIds || Object.keys(map.spawns)).forEach((spawnId) => push(map.spawns[spawnId]));
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
     const current = queue[cursor];
     directions.forEach((direction) => {
@@ -124,7 +210,7 @@ function validatePlacements() {
 }
 
 function validateRouteComponents() {
-  const entries = ['inn', 'jiangnan_dock'];
+  const entries = ['inn'];
   const reached = {};
   const queue = entries.slice();
   queue.forEach((id) => { reached[id] = true; });
@@ -160,11 +246,16 @@ function validateSweptCollision() {
   assert(world.isWalkable(slideMap, slide), '滑动结果落入了碰撞区');
 }
 
-validateProgressiveAccess();
+validateAllMapAccess();
 validateChapterTwoEntrances();
 validateInteractions();
 validatePlacements();
 validateRouteComponents();
+validateReachableExits();
+validateInnCounterOcclusion();
+validateExitRearm();
+validateNpcScenePlacement();
+validateNpcFootCollision();
 validateSweptCollision();
 
 if (errors.length) {
@@ -172,4 +263,4 @@ if (errors.length) {
   process.exit(1);
 }
 
-console.log(`Exploration v11 validation passed: ${content.maps.length} maps, ${Object.keys(content.dialogues).length} dialogues, progressive access, reachable hotspots and swept collision.`);
+console.log(`Exploration v11 validation passed: ${content.maps.length} maps, ${Object.keys(content.dialogues).length} dialogues, all-map access, reachable hotspots and swept collision.`);

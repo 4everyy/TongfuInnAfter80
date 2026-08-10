@@ -3,6 +3,20 @@
 var definitions = require('../../data/inn-interactions');
 var management = require('./inn');
 var content = require('../../data/content');
+var world = require('../world/explore');
+
+var STORY_PRIORITY = {
+  battle: 90,
+  dialogue: 80,
+  cookingTrial: 78,
+  investigate: 70,
+  repair: 66,
+  collect: 60,
+  loot: 58,
+  recipeSample: 56,
+  crisis: 48,
+  inn: 45,
+};
 
 var MICRO_PREP_IDS = {
   purchase: 'purchase',
@@ -59,11 +73,14 @@ function defaultState() {
 
 function ensure(state) {
   var base = defaultState();
-  state.innScene = Object.assign(base, state.innScene || {});
+  if (!state.innScene || typeof state.innScene !== 'object') state.innScene = base;
+  else Object.keys(base).forEach(function (key) {
+    if (state.innScene[key] === undefined) state.innScene[key] = base[key];
+  });
   state.innScene.seenObjects = Array.isArray(state.innScene.seenObjects)
     ? state.innScene.seenObjects
     : [];
-  state.innScene.mastery = Object.assign(base.mastery, state.innScene.mastery || {});
+  state.innScene.mastery = Object.assign({}, base.mastery, state.innScene.mastery || {});
   if (state.screen === 'inn') {
     state.screen = 'explore';
     state.mode = 'explore';
@@ -96,6 +113,7 @@ function serviceObjectRole(state) {
     return 'kitchen';
   }
   event = management.data.serviceEvents[step.id];
+  if (event && event.objectRole) return event.objectRole;
   (event && event.choices || []).forEach(function (choice) {
     if (choice.job && jobs.indexOf(choice.job) < 0) jobs.push(choice.job);
   });
@@ -118,9 +136,86 @@ function actionLockedReason(state, action) {
   return '';
 }
 
+function linkedStoryActions(state, object) {
+  return world.visibleHotspots(state)
+    .filter(function (spot) { return spot.linkedObjectId === object.id; })
+    .map(function (spot) {
+      var status = world.interactionState(state, spot);
+      return {
+        id: 'story:' + spot.id,
+        label: spot.label,
+        kind: 'story',
+        hotspotId: spot.id,
+        primary: true,
+        storyPriority: Number(spot.priority) || STORY_PRIORITY[spot.type] || 40,
+        lockedReason: status === 'active' ? '' : '请控制佟湘玉靠近后再进行“' + spot.label + '”。',
+      };
+    })
+    .sort(function (a, b) { return b.storyPriority - a.storyPriority; })
+    .slice(0, 1);
+}
+
+function highlightObjectId(state) {
+  var currentObjects = objects(state);
+  var activeStories = [];
+  var visibleStories = [];
+  var target;
+
+  currentObjects.forEach(function (object) {
+    linkedStoryActions(state, object).forEach(function (action) {
+      var item = {
+        objectId: object.id,
+        priority: action.storyPriority,
+        distance: Math.hypot(
+          state.position.x - object.anchor.x,
+          state.position.y - object.anchor.y
+        ),
+      };
+      visibleStories.push(item);
+      if (!action.lockedReason) activeStories.push(item);
+    });
+  });
+
+  activeStories.sort(function (a, b) {
+    return b.priority - a.priority || a.distance - b.distance;
+  });
+  if (activeStories.length) return activeStories[0].objectId;
+
+  target = serviceObjectRole(state);
+  if (target) {
+    target = currentObjects.filter(function (object) { return object.role === target; })[0];
+    if (target) return target.id;
+  }
+
+  visibleStories.sort(function (a, b) {
+    return a.distance - b.distance || b.priority - a.priority;
+  });
+  if (visibleStories.length) return visibleStories[0].objectId;
+
+  if (state.calendar && state.calendar.phase === 'evening') {
+    target = currentObjects.filter(function (object) { return object.role === 'counter'; })[0];
+    if (target) return target.id;
+  }
+  if (state.inn && state.inn.roomState && state.inn.roomState.some(function (item) {
+    return item.cleanliness < 55 || item.eventId;
+  })) {
+    target = currentObjects.filter(function (object) { return object.role === 'rooms'; })[0];
+    if (target) return target.id;
+  }
+  if (state.inventory && state.inventory.ingredient < 6) {
+    target = currentObjects.filter(function (object) { return object.role === 'supply'; })[0];
+    if (target) return target.id;
+  }
+  if (state.calendar && state.calendar.phase === 'morning') {
+    target = currentObjects.filter(function (object) { return object.role === 'door'; })[0];
+    if (target) return target.id;
+  }
+  return null;
+}
+
 function actionsForObject(state, object) {
   var phase = state.calendar && state.calendar.phase || 'morning';
-  var result = [];
+  var result = linkedStoryActions(state, object);
   var serviceRole = serviceObjectRole(state);
   if (phase === 'noon') {
     if (serviceRole === object.role) result.push(copy(definitions.action('service')));
@@ -138,7 +233,10 @@ function actionsForObject(state, object) {
 
 function attention(state, object) {
   var phase = state.calendar && state.calendar.phase || 'morning';
-  if (phase === 'noon') return serviceObjectRole(state) === object.role ? 'urgent' : 'idle';
+  var story = linkedStoryActions(state, object);
+  if (highlightObjectId(state) !== object.id) return 'idle';
+  if (story.length) return 'story';
+  if (phase === 'noon') return 'urgent';
   if (object.role === 'door' && phase === 'morning') return 'ready';
   if (object.role === 'counter' && phase === 'evening') return 'ready';
   if (object.role === 'notice' && state.sideQuests && state.sideQuests.activeId) return 'urgent';
@@ -263,14 +361,18 @@ function openPage(state, page) {
 function runObjectAction(state, id) {
   var scene = ensure(state);
   var object = find(objects(state), scene.selectedObjectId);
-  var action = definitions.action(id);
-  var available;
-  if (!object || !action) return false;
-  available = actionsForObject(state, object).some(function (item) { return item.id === id; });
-  if (!available) return false;
-  if (actionLockedReason(state, action)) {
-    state.toast = actionLockedReason(state, action);
+  var action;
+  if (!object) return false;
+  action = find(actionsForObject(state, object), id);
+  if (!action) return false;
+  if (action.lockedReason || actionLockedReason(state, action)) {
+    state.toast = action.lockedReason || actionLockedReason(state, action);
     return false;
+  }
+  if (action.kind === 'story') {
+    scene.pendingStoryHotspotId = action.hotspotId;
+    scene.selectedObjectId = null;
+    return true;
   }
   if (action.kind === 'page') return openPage(state, action.page);
   if (action.kind === 'micro') return startMicroGame(state, action.microGame);
@@ -286,6 +388,13 @@ function runObjectAction(state, id) {
     return true;
   }
   return false;
+}
+
+function consumePendingStory(state) {
+  var scene = ensure(state);
+  var id = scene.pendingStoryHotspotId || null;
+  scene.pendingStoryHotspotId = null;
+  return id;
 }
 
 function dispatch(state, action) {
@@ -329,7 +438,9 @@ module.exports = {
   objects: objects,
   actionsForObject: actionsForObject,
   serviceObjectRole: serviceObjectRole,
+  highlightObjectId: highlightObjectId,
   attention: attention,
   dispatch: dispatch,
+  consumePendingStory: consumePendingStory,
   closeSceneUi: closeSceneUi,
 };

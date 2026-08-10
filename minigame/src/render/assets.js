@@ -93,23 +93,49 @@ function createAssetStore() {
     return record;
   }
 
-  function mapPaths(id) {
+  function nextPhase(phase) {
+    if (phase === 'morning') return 'noon';
+    if (phase === 'noon') return 'evening';
+    return 'morning';
+  }
+
+  function mapPaths(id, context) {
     const art = manifest.maps[id];
+    const config = context || null;
+    const includeOptional = !config || config.includeOptional !== false;
+    const phase = config && config.phase;
+    const allowedPhases = phase
+      ? [phase].concat(config.includeNextPhase ? [nextPhase(phase)] : [])
+      : null;
     if (!art) return [];
-    const layers = art.layers ? art.layers.map((layer) => layer.src) : [];
-    const props = art.props ? art.props.map((prop) => prop.src) : [];
+    const layers = art.layers ? art.layers.filter((layer) => {
+      if (layer.optional && !includeOptional) return false;
+      if (layer.phase && allowedPhases && allowedPhases.indexOf(layer.phase) < 0) return false;
+      if (layer.weather && config && config.weather && layer.weather !== config.weather) return false;
+      return true;
+    }).map((layer) => layer.src) : [];
+    const props = art.props
+      ? art.props.filter((prop) => includeOptional || !prop.optional).map((prop) => prop.src)
+      : [];
     return unique(layers.concat(props));
   }
 
   function rolePaths(id, fields) {
     const art = manifest.characters[id];
     if (!art) return [];
-    const keys = fields || ['portrait', 'atlases', 'battle', 'chapterActions'];
+    const keys = fields || ['portrait', 'dialogue', 'atlases', 'battle', 'battlePortrait', 'skillCutIn', 'chapterActions'];
     const paths = [];
     keys.forEach((key) => {
       if (key === 'atlases' || key === 'atlas') {
         if (art.atlases) Object.keys(art.atlases).forEach((direction) => paths.push(art.atlases[direction]));
         else paths.push(art.atlas);
+      } else if (key === 'dialogue') {
+        if (art.dialogue) {
+          paths.push(art.dialogue.bust);
+          paths.push(art.dialogue.atlas);
+          Object.keys(art.dialogue.expressions || {}).forEach((name) => paths.push(art.dialogue.expressions[name]));
+          Object.keys(art.dialogue.poses || {}).forEach((name) => paths.push(art.dialogue.poses[name]));
+        }
       } else if (key === 'skillIcons') {
         if (art.skillIcons && manifest.ui && manifest.ui.battle) paths.push(manifest.ui.battle.iconAtlas);
       } else paths.push(art[key]);
@@ -128,7 +154,10 @@ function createAssetStore() {
   function uiPaths() {
     const resources = manifest.ui && manifest.ui.resources || {};
     const battle = manifest.ui && manifest.ui.battle || {};
-    return unique(Object.keys(resources).map((id) => resources[id]).concat([
+    const presentation = manifest.ui && manifest.ui.presentation || {};
+    return unique(Object.keys(resources).map((id) => resources[id])
+      .concat(Object.keys(presentation).map((id) => presentation[id]))
+      .concat([
       battle.wheel,
       battle.ledger,
       battle.iconAtlas,

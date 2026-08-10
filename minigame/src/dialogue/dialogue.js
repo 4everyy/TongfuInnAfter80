@@ -7,16 +7,24 @@ const campaign = require('../core/campaign');
 const caseFiles = require('../core/case-files');
 const branches = require('../inn/branches');
 const transport = require('../core/transport');
+const presentation = require('../../data/presentation');
+const commerce = require('../world/commerce');
 
 function open(state, id) {
   const definition = dialogues[id];
+  let visual;
   if (!definition) return false;
+  visual = presentation.dialogue(id, definition);
   state.dialogue = Object.assign({ id }, definition, {
     speaker: definition.speakerId ? content.identity.roleName(definition.speakerId) : content.identity.resolve(definition.speaker),
     speakerId: definition.speakerId || null,
     text: content.identity.resolve(definition.text),
     openedAt: Date.now(),
     revealed: false,
+    presentation: definition.presentation || visual.presentation,
+    listenerId: definition.listenerId || visual.listenerId,
+    expression: definition.expression || visual.expression,
+    pose: definition.pose || visual.pose,
     choices: (definition.choices || []).map(function (choice) {
       return Object.assign({}, choice, { label: content.identity.resolve(choice.label) });
     }),
@@ -54,6 +62,7 @@ function choose(state, index) {
 
   if (choice.action === 'inn') innSystem.enterManagement(state, !!(state.sideQuests && state.sideQuests.activeId));
   if (choice.action === 'party') state.modal = { type: 'party' };
+  if (choice.action === 'shop') commerce.open(state, choice.shopId);
   if (choice.action === 'flag') state.toast = '任务状态已更新。';
   if (choice.action === 'reward') state.toast = choice.reward && choice.reward.coin < 0 ? '喝过热茶，精神好多了。' : '获得了一份补给。';
   if (choice.action === 'caseEvidence') {

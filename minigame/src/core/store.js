@@ -8,6 +8,7 @@ const branchSystem = require('../inn/branches');
 const transport = require('./transport');
 const cookingTrials = require('../inn/cooking-trials');
 const innScene = require('../inn/scene-interactions');
+const commerce = require('../world/commerce');
 
 const VERSION = 10;
 const KEY = 'dengxia-rpg-save-v10';
@@ -73,6 +74,7 @@ function freshCharacters() {
       innUnlocked: role.id === 'zhangdeng',
       jobXp: {},
       episodeStep: 0,
+      equipment: { weapon: null, accessory: null },
     };
   });
   return characters;
@@ -95,6 +97,7 @@ function freshState() {
     party: ['zhangdeng'],
     followers: {},
     trail: [],
+    exitRearmMapId: null,
     characters: freshCharacters(),
     flags: {},
     inventory: {
@@ -109,7 +112,14 @@ function freshState() {
     explorationContext: { source: 'title', purpose: 'free', returnMapId: 'inn', advancesTimeOnReturn: true },
     explorationEvents: {},
     visitedMaps: { inn: true },
-    unlockedMaps: { inn: true, yard: true, street: true },
+    unlockedMaps: {
+      inn: true,
+      yard: true,
+      street: true,
+      locust_lane: true,
+      tea_shed: true,
+      east_gate: true,
+    },
     campaign: { season: 1, chapter: 1, chapterDay: 1, gameDay: 1, step: 'prologue', tendencies: { favor: 0, rule: 0, venture: 0 }, completed: [], seasonRatings: {} },
     relationships: {},
     randomEvents: { seed: 7301, recent: [], currentId: null, chains: {}, resolved: [] },
@@ -129,6 +139,8 @@ function freshState() {
     },
     transport: { nextId: 1, orders: [], routeCondition: 'clear' },
     recipeResearch: { samples: {}, hypotheses: {}, fragments: [], results: {}, unlockedRecipes: [] },
+    coreLoopV28: { version: 28, appliedOpeningDay: 0, customers: {}, dishMastery: {}, dailyMetrics: {}, consequences: [], explorationRewards: [], milestones: {}, purchaseDiscount: 0, lastFeedback: '' },
+    commerce: { owned: {}, dailyPurchases: {}, lastShopId: null, totalSpent: 0 },
     cookingTrial: null,
     legacyArchive: null,
     inn: { day: 1, reputation: 3, order: 68, risk: 2, rooms: 1, menu: ['noodles'], upgrades: [], guests: 0 },
@@ -156,6 +168,7 @@ function freshState() {
     doorwayCrisis: doorwayCrisis.fresh(),
     toast: '《灯下江湖》序章：风从门前起。',
   };
+  maps.forEach((sourceMap) => { state.unlockedMaps[sourceMap.id] = true; });
   management.ensure(state);
   chapter001.ensure(state);
   doorwayCrisis.ensure(state);
@@ -165,6 +178,7 @@ function freshState() {
   transport.ensure(state);
   cookingTrials.ensure(state);
   innScene.ensure(state);
+  commerce.ensure(state);
   return state;
 }
 
@@ -229,6 +243,16 @@ function normalize(saved) {
   next.regionalMarkets = Object.assign({}, base.regionalMarkets, saved && saved.regionalMarkets);
   next.transport = Object.assign({}, base.transport, saved && saved.transport);
   next.recipeResearch = Object.assign({}, base.recipeResearch, saved && saved.recipeResearch);
+  next.coreLoopV28 = Object.assign({}, base.coreLoopV28, saved && saved.coreLoopV28);
+  next.coreLoopV28.customers = Object.assign({}, next.coreLoopV28.customers || {});
+  next.coreLoopV28.dishMastery = Object.assign({}, next.coreLoopV28.dishMastery || {});
+  next.coreLoopV28.dailyMetrics = Object.assign({}, next.coreLoopV28.dailyMetrics || {});
+  next.coreLoopV28.consequences = Array.isArray(next.coreLoopV28.consequences) ? next.coreLoopV28.consequences : [];
+  next.coreLoopV28.explorationRewards = Array.isArray(next.coreLoopV28.explorationRewards) ? next.coreLoopV28.explorationRewards : [];
+  next.coreLoopV28.milestones = Object.assign({}, next.coreLoopV28.milestones || {});
+  next.commerce = Object.assign({}, base.commerce, saved && saved.commerce);
+  next.commerce.owned = Object.assign({}, base.commerce.owned, next.commerce.owned || {});
+  next.commerce.dailyPurchases = Object.assign({}, base.commerce.dailyPurchases, next.commerce.dailyPurchases || {});
   next.cookingTrial = saved && saved.cookingTrial && typeof saved.cookingTrial === 'object'
     ? Object.assign({}, saved.cookingTrial)
     : null;
@@ -255,28 +279,7 @@ function normalize(saved) {
   }
   next.position = safePosition(next.mapId, { x: migratedX, y: oldY }, fallbackSpawn);
   next.visitedMaps[next.mapId] = true;
-  next.unlockedMaps[next.mapId] = true;
-  if (next.flags.doorwayDisturbanceResolved || next.flags['mission-accepted'] || next.campaign.chapter >= 2) {
-    ['locust_lane', 'tea_shed', 'east_gate'].forEach((id) => { next.unlockedMaps[id] = true; });
-  }
-  if (next.flags['mission-accepted'] || next.flags['chapter-late-letter-complete'] || next.campaign.chapter >= 3) {
-    next.unlockedMaps.stone_bridge = true;
-  }
-  let changed = true;
-  while (changed) {
-    changed = false;
-    maps.forEach((sourceMap) => {
-      if (!next.unlockedMaps[sourceMap.id]) return;
-      sourceMap.exits.forEach((exit) => {
-        const requirementsMet = (exit.requires || []).every((flag) => !!next.flags[flag]);
-        const exclusionsMet = !(exit.unless || []).some((flag) => !!next.flags[flag]);
-        if (requirementsMet && exclusionsMet && !exit.mapGate && !next.unlockedMaps[exit.target]) {
-          next.unlockedMaps[exit.target] = true;
-          changed = true;
-        }
-      });
-    });
-  }
+  maps.forEach((sourceMap) => { next.unlockedMaps[sourceMap.id] = true; });
   next.velocity = { x: 0, y: 0 };
   next.facing = typeof next.facing === 'string' ? next.facing : next.facing < 0 ? 'left' : 'right';
   next.party = (migratingLegacy ? base.party : Array.isArray(saved.party) ? saved.party : base.party)
@@ -318,6 +321,7 @@ function normalize(saved) {
   management.ensure(next);
   transport.ensure(next);
   cookingTrials.ensure(next);
+  commerce.ensure(next);
   if (next.cookingTrial && !next.cookingTrial.completed) next.modal = { type: 'cookingTrial' };
   next.mapVariants.phase = next.worldTime.phase;
   return next;

@@ -184,7 +184,7 @@ var maps = [
         id: 'old-kitchen-shiwei',
         roleId: 'shiwei',
         name: '李大嘴',
-        x: 810,
+        x: 825,
         y: 278,
         facing: 'left',
         requires: ['c11-workshop-proof'],

@@ -6,6 +6,10 @@ const deep56 = require('./season1-deep-56');
 const deep78 = require('./season1-deep-78');
 const season2 = require('./season2-ch910');
 const season2ch11 = require('./season2-ch11');
+const scenePopulation = require('./scene-population');
+const npcPopulationV26 = require('./npc-population-v26');
+const allMapAccessV27 = require('./all-map-access-v27');
+const merchantStalls = require('./merchant-stalls');
 
 const roles = campaign.roles.map((role) => Object.assign({}, role, {
   originalName: role.name,
@@ -47,11 +51,11 @@ const maps = [
       { id: 'stove', x: 820, y: 245, radius: 72, label: '后厨火候', type: 'crisis', crisisId: 'stove' },
       { id: 'bai-watch', x: 700, y: 260, radius: 72, label: '谢无尘', type: 'crisis', crisisId: 'bai' },
       { id: 'guest-stairs', x: 395, y: 228, radius: 66, label: '客房楼梯', type: 'inn' },
-      { id: 'doorway-troublemaker', x: 1510, y: 280, radius: 78, label: '门口闹事者', type: 'battle', battle: 'doorway_troublemaker', requires: ['doorway-clues-ready'], unless: ['doorway-troublemaker-stopped', 'doorwayDisturbanceResolved'] },
+      { id: 'doorway-troublemaker', x: 1540, y: 286, radius: 72, label: '门口闹事者', type: 'battle', battle: 'doorway_troublemaker', requires: ['doorway-clues-ready'], unless: ['doorway-troublemaker-stopped', 'doorwayDisturbanceResolved'] },
     ],
     npcs: [
-      { id: 'wuchen-inn', roleId: 'wuchen', x: 700, y: 250, facing: 'left', hideWhenInParty: true, allowBlockedPlacement: true },
-      { id: 'doorway-troublemaker-npc', artId: 'ruffian_fast', name: '闹事者', x: 1510, y: 258, facing: 'left', requires: ['doorway-clues-ready'], unless: ['doorway-troublemaker-stopped', 'doorwayDisturbanceResolved'] },
+      { id: 'wuchen-inn', roleId: 'wuchen', x: 700, y: 250, facing: 'left', hideWhenInParty: true, allowBlockedPlacement: true, behindObstacleId: 'counter', shadowAlpha: 0 },
+      { id: 'doorway-troublemaker-npc', artId: 'ruffian_fast', name: '闹事者', x: 1540, y: 286, facing: 'left', blocksMovement: false, requires: ['doorway-clues-ready'], unless: ['doorway-troublemaker-stopped', 'doorwayDisturbanceResolved'] },
     ],
   },
   {
@@ -88,9 +92,9 @@ const maps = [
       { id: 'merchant', x: 520, y: 272, radius: 70, label: '焦急的行商', type: 'dialogue', dialogue: 'street-merchant', requires: ['yard-trail'] },
     ],
     npcs: [
-      { id: 'jingzhi-street', roleId: 'jingzhi', x: 900, y: 252, facing: 'left', unless: ['jingzhi-cooperating'] },
-      { id: 'street-merchant', artId: 'merchant', name: '行商', color: '#8b6a47', x: 620, y: 254, facing: 'right' },
-      { id: 'street-townsman', artId: 'townsman_old', name: '买菜老伯', x: 1320, y: 300, facing: 'left', showName: false },
+      { id: 'jingzhi-street', roleId: 'jingzhi', x: 900, y: 252, facing: 'left', unless: ['jingzhi-cooperating'], blocksMovement: false },
+      { id: 'street-merchant', artId: 'merchant', name: '行商', color: '#8b6a47', x: 620, y: 254, facing: 'right', blocksMovement: false },
+      { id: 'street-townsman', artId: 'townsman_old', name: '买菜老伯', x: 1320, y: 300, facing: 'left', showName: false, blocksMovement: false },
     ],
   },
   {
@@ -125,7 +129,7 @@ const maps = [
       { id: 'to-gate', zone: { x: 1538, y: 220, width: 62, height: 108 }, target: 'east_gate', spawn: 'tea', mapGate: 'town-core' },
     ],
     hotspots: [{ id: 'tea-owner', x: 740, y: 272, radius: 84, label: '茶棚老板', type: 'dialogue', dialogue: 'tea-owner', requires: ['notice-decoded'], unless: ['tea-clue'] }],
-    npcs: [{ id: 'tea-owner-npc', artId: 'tea_owner', name: '茶棚老板', color: '#6f5b45', x: 700, y: 246, facing: 'down', allowBlockedPlacement: true }],
+    npcs: [{ id: 'tea-owner-npc', artId: 'tea_owner', name: '茶棚老板', color: '#6f5b45', x: 700, y: 246, facing: 'down', allowBlockedPlacement: true, behindObstacleId: 'tea-shed', shadowAlpha: 0 }],
   },
   {
     id: 'east_gate', name: '雁回镇雁回东关关', width: 1700, height: 348,
@@ -140,7 +144,7 @@ const maps = [
       { id: 'to-bridge', zone: { x: 1638, y: 218, width: 62, height: 110 }, target: 'stone_bridge', spawn: 'gate', mapGate: 'late-letter' },
     ],
     hotspots: [{ id: 'gate-check', x: 630, y: 278, radius: 82, label: '巡街差役', type: 'dialogue', dialogue: 'gate-check', requires: ['tea-clue'], unless: ['gate-cleared'] }],
-    npcs: [{ id: 'gate-guard', artId: 'guard', name: '巡街差役', color: '#53677b', x: 610, y: 252, facing: 'down' }],
+    npcs: [{ id: 'gate-guard', artId: 'guard', name: '巡街差役', color: '#53677b', x: 610, y: 252, facing: 'down', allowBlockedPlacement: true, behindObstacleId: 'guard-table', shadowAlpha: 0 }],
   },
   {
     id: 'stone_bridge', name: '镇外石桥', width: 1900, height: 348,
@@ -230,14 +234,18 @@ const runtimeGeometry = {
   inn: {
     walkable: [floorPolygon(1000, 218, 336)],
     obstacles: [
-      { id: 'counter', polygon: rectPolygon(258, 220, 420, 74), sortY: 294, occluderRise: 82 },
-      { id: 'stairs', polygon: rectPolygon(712, 170, 164, 126), sortY: 296, occluderRise: 126 },
+      { id: 'counter', polygon: rectPolygon(258, 220, 420, 74), sortY: 294, occluderRise: 0 },
+      {
+        id: 'stairs',
+        polygon: [[650, 164], [808, 164], [898, 296], [898, 306], [720, 306]],
+        sortY: 306,
+      },
       { id: 'left-table', polygon: rectPolygon(0, 286, 172, 62), sortY: 336 },
-      { id: 'right-table', polygon: rectPolygon(680, 300, 240, 48), sortY: 340 },
+      { id: 'right-table', polygon: rectPolygon(680, 336, 240, 12), sortY: 340 },
     ],
     spawns: {
       main: { x: 520, y: 318, facing: 'right' },
-      streetDoor: { x: 950, y: 318, facing: 'left' },
+      streetDoor: { x: 920, y: 318, facing: 'left' },
       yardDoor: { x: 205, y: 316, facing: 'right' },
       recovery: { x: 520, y: 318, facing: 'right' },
     },
@@ -247,9 +255,9 @@ const runtimeGeometry = {
     },
     points: {
       briefing: [540, 316], 'return-report': [540, 316], 'inn-ledger': [500, 310], 'guest-stairs': [890, 300],
-      'zhangdeng-inn': [520, 318], 'wuchen-inn': [430, 216],
+      'zhangdeng-inn': [520, 318], 'wuchen-inn': [430, 286],
       'rumor-board': [540, 304], 'tea-table': [196, 320], stove: [245, 314], 'bai-watch': [430, 304],
-      'doorway-troublemaker': [950, 318], 'doorway-troublemaker-npc': [950, 310],
+      'doorway-troublemaker': [860, 318], 'doorway-troublemaker-npc': [860, 318],
     },
   },
   yard: {
@@ -307,7 +315,12 @@ const runtimeGeometry = {
     walkable: [floorPolygon(950, 205, 332)],
     obstacles: [
       { id: 'left-jars', polygon: rectPolygon(80, 145, 115, 105) },
-      { id: 'tea-shed', polygon: rectPolygon(340, 100, 380, 130) },
+      {
+        id: 'tea-shed',
+        polygon: rectPolygon(340, 100, 380, 130),
+        sortY: 252,
+        occluderPolygon: rectPolygon(430, 166, 230, 70),
+      },
       { id: 'right-table', polygon: rectPolygon(720, 150, 210, 100) },
     ],
     spawns: {
@@ -334,7 +347,7 @@ const runtimeGeometry = {
       'to-tea': { x: 0, y: 220, width: 50, height: 112 },
       'to-bridge': { x: 430, y: 210, width: 170, height: 65 },
     },
-    points: { 'gate-check': [260, 270], 'gate-guard': [250, 245] },
+    points: { 'gate-check': [190, 278], 'gate-guard': [145, 280] },
   },
   stone_bridge: {
     walkable: [floorPolygon(1050, 215, 332)],
@@ -475,8 +488,8 @@ innMap.hotspots.forEach((hotspot) => {
   }
 });
 
-streetMap.spawns.paperReturn = { x: 230, y: 292, facing: 'right' };
-streetMap.spawns.guildReturn = { x: 620, y: 292, facing: 'left' };
+streetMap.spawns.paperReturn = { x: 180, y: 292, facing: 'right' };
+streetMap.spawns.guildReturn = { x: 680, y: 292, facing: 'left' };
 streetMap.exits.push(
   { id: 'to-paper-mill', zone: { x: 200, y: 190, width: 90, height: 76 }, target: 'paper_mill', spawn: 'street', requires: ['c03-started'] },
   { id: 'to-guild-warehouse', zone: { x: 585, y: 190, width: 90, height: 76 }, target: 'guild_warehouse', spawn: 'street', requires: ['c03-decoy-ready'] }
@@ -577,6 +590,51 @@ riverMarketMap.hotspots.push(
   }
 );
 
+// Story interactions attached to physical inn props share the prop's single
+// visual marker and hit area. Character and loose-world interactions remain
+// independent hotspots.
+const linkedInnHotspots = {
+  inn: {
+    'rumor-board': 'changfeng-notice',
+    'inn-ledger': 'changfeng-counter',
+    'tea-table': 'changfeng-hall',
+    stove: 'changfeng-stove',
+    'guest-stairs': 'changfeng-rooms',
+    'doorway-troublemaker': 'changfeng-door',
+    'c09-briefing': 'changfeng-notice',
+    'late-letter-briefing': 'changfeng-notice',
+    'late-letter-return': 'changfeng-notice',
+    'c03-briefing': 'changfeng-counter',
+    'c03-decoy': 'changfeng-counter',
+    'c04-briefing': 'changfeng-door',
+    'c05-briefing': 'changfeng-counter',
+    'c06-briefing': 'changfeng-door',
+    'c07-briefing': 'changfeng-counter',
+    'c07-market-ledger': 'changfeng-counter',
+    'c08-briefing': 'changfeng-door',
+    'c08-fragment': 'changfeng-counter',
+  },
+  jiangnan_branch: {
+    'c10-briefing': 'jiangnan-counter',
+    'c10-room-check': 'jiangnan-rooms',
+    'c10-stove-check': 'jiangnan-stove',
+    'c10-repair-stove': 'jiangnan-stove',
+    'c10-finale': 'jiangnan-counter',
+    'c11-briefing': 'jiangnan-counter',
+    'c11-returned-dishes': 'jiangnan-stove',
+    'c11-identify-spice': 'jiangnan-stove',
+    'c11-seasoning-trial': 'jiangnan-stove',
+  },
+};
+
+Object.keys(linkedInnHotspots).forEach((mapId) => {
+  const current = mapDefinition(mapId);
+  const links = linkedInnHotspots[mapId];
+  current.hotspots.forEach((hotspot) => {
+    if (links[hotspot.id]) hotspot.linkedObjectId = links[hotspot.id];
+  });
+});
+
 const dialogues = {
   'late-letter-briefing': {
     speakerId: 'zhangdeng',
@@ -625,6 +683,10 @@ Object.keys(deep56.dialogues).forEach((id) => { dialogues[id] = deep56.dialogues
 Object.keys(deep78.dialogues).forEach((id) => { dialogues[id] = deep78.dialogues[id]; });
 Object.keys(season2.dialogues).forEach((id) => { dialogues[id] = season2.dialogues[id]; });
 Object.keys(season2ch11.dialogues).forEach((id) => { dialogues[id] = season2ch11.dialogues[id]; });
+allMapAccessV27.apply(maps);
+scenePopulation.apply(maps, dialogues);
+npcPopulationV26.apply(maps, dialogues);
+merchantStalls.apply(maps, dialogues);
 
 const battles = {
   doorway_troublemaker: {

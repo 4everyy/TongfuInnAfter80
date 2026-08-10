@@ -8,6 +8,7 @@ var drawManagement = require('./views/management').drawManagement;
 var drawManagementOverlay = require('./views/management').drawManagementOverlay;
 var drawOverlays = require('./views/overlays').drawOverlays;
 var drawBattle = require('./views/battle').drawBattle;
+var drawTransitions = require('./views/transitions').drawTransitions;
 var drawChapter001 = require('./views/chapter001').drawChapter001;
 
 var WALK_FRAME_DISTANCE = 12.5;
@@ -424,22 +425,29 @@ function createRenderer(canvas) {
     var npc;
     var index;
     if (!state || state.screen === 'title') {
-      paths = paths.concat(assets.mapPaths('inn'));
+      paths = paths.concat(assets.mapPaths('inn', { includeOptional: false }));
       paths = paths.concat(assets.rolePaths('zhangdeng', ['portrait']));
       return unique(paths);
     }
     if (state.screen === 'inn') {
-      paths = paths.concat(assets.mapPaths(state.activeBranchId === 'jiangnan' ? 'jiangnan_branch' : 'inn'));
+      paths = paths.concat(assets.mapPaths(state.activeBranchId === 'jiangnan' ? 'jiangnan_branch' : 'inn', {
+        phase: state.calendar && state.calendar.phase || 'morning',
+        includeOptional: false
+      }));
       ['zhangdeng', 'wuchen', 'jingzhi', 'wenyan', 'shiwei'].forEach(function (id) {
         if (!state.characters[id] || !state.characters[id].innUnlocked) return;
         paths = paths.concat(assets.rolePaths(id, ['portrait', 'atlases']));
       });
       return unique(paths);
     }
-    paths = paths.concat(assets.mapPaths(state.mapId));
+    paths = paths.concat(assets.mapPaths(state.mapId, {
+      phase: state.worldTime && state.worldTime.phase || 'morning',
+      weather: state.mapVariants && state.mapVariants.weather,
+      includeOptional: false
+    }));
     ids = partyIds(state);
     for (index = 0; index < ids.length; index += 1) {
-      paths = paths.concat(assets.rolePaths(ids[index], ['portrait', 'atlases']));
+      paths = paths.concat(assets.rolePaths(ids[index], ['portrait', 'dialogue', 'atlases']));
     }
     current = mapById(state.mapId);
     for (index = 0; index < current.npcs.length; index += 1) {
@@ -449,8 +457,9 @@ function createRenderer(canvas) {
     }
     if (state.battle && state.battle.enemies) {
       paths = paths.concat(assets.uiPaths());
+      if (state.battle.performance && state.battle.performance.atlas) paths.push(state.battle.performance.atlas);
       for (index = 0; index < ids.length; index += 1) {
-        paths = paths.concat(assets.rolePaths(ids[index], ['skillIcons', 'battle']));
+        paths = paths.concat(assets.rolePaths(ids[index], ['skillIcons', 'battle', 'battlePortrait', 'skillCutIn']));
       }
       for (index = 0; index < state.battle.enemies.length; index += 1) {
         if (state.battle.enemies[index].artId) {
@@ -460,6 +469,10 @@ function createRenderer(canvas) {
     }
     if (state.modal && state.modal.type === 'cookingTrial') {
       paths = paths.concat(assets.rolePaths('shiwei', ['chapterActions']));
+    }
+    if (state.dialogue) {
+      if (state.dialogue.speakerId) paths = paths.concat(assets.rolePaths(state.dialogue.speakerId, ['dialogue']));
+      if (state.dialogue.listenerId) paths = paths.concat(assets.rolePaths(state.dialogue.listenerId, ['dialogue']));
     }
     return unique(paths);
   }
@@ -542,14 +555,29 @@ function createRenderer(canvas) {
     var index;
     var npc;
     var key;
+    var phase;
+    var weather;
     if (!state || state.screen !== 'explore' || !state.mapId) return;
     current = mapById(state.mapId);
-    key = state.mapId + '|' + partyIds(state).join(',');
+    phase = state.worldTime && state.worldTime.phase || 'morning';
+    weather = state.mapVariants && state.mapVariants.weather;
+    key = state.mapId + '|' + phase + '|' + String(weather || '') + '|' + partyIds(state).join(',');
     if (key === prefetchKey) return;
     prefetchKey = key;
 
+    paths = paths.concat(assets.mapPaths(state.mapId, {
+      phase: phase,
+      weather: weather,
+      includeOptional: true,
+      includeNextPhase: true
+    }));
     for (index = 0; index < current.exits.length; index += 1) {
-      paths = paths.concat(assets.mapPaths(current.exits[index].target));
+      paths = paths.concat(assets.mapPaths(current.exits[index].target, {
+        phase: phase,
+        weather: weather,
+        includeOptional: true,
+        includeNextPhase: false
+      }));
     }
     for (index = 0; index < current.npcs.length; index += 1) {
       npc = current.npcs[index];
@@ -592,6 +620,7 @@ function createRenderer(canvas) {
       joystickVector: vector,
       joystickAxis: function () { return vector().x; },
       timeTint: timeTint,
+      phaseLayerAlpha: phaseLayerAlpha,
       pageProgress: pageProgress
     };
   }
@@ -698,6 +727,15 @@ function createRenderer(canvas) {
     ctx.fillRect(x, y, width, height);
   }
 
+  function phaseLayerAlpha(phase) {
+    var progress = Math.min(1, Math.max(0, (frameNow - phaseTransition.startedAt) / theme.motion.scene));
+    var eased = progress * progress * (3 - 2 * progress);
+    if (phaseTransition.from === phaseTransition.to) return phase === phaseTransition.to ? 1 : 0;
+    if (phase === phaseTransition.from) return 1 - eased;
+    if (phase === phaseTransition.to) return eased;
+    return 0;
+  }
+
   function updatePageTransition(page, now) {
     if (!pageTransition.page) {
       pageTransition.page = page;
@@ -761,6 +799,7 @@ function createRenderer(canvas) {
         }
         drawOverlays(view, state);
       }
+      drawTransitions(view, state);
       drawResourceEffects(now);
     } catch (error) {
       runtimeError = error;
