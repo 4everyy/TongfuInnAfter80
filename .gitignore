@@ -9,6 +9,10 @@ vite-dev*.log
 # 构建产物 / 预览 / QA 临时文件 —— 全部放 D:\AI，不进仓库（见 AGENTS.md）
 outputs/
 
+# Python 编译缓存（tools/ 下有 .py 脚本，防止 .pyc 污染）
+__pycache__/
+*.pyc
+
 # Unity generated files
 unity/[Ll]ibrary/
 unity/[Tt]emp/
