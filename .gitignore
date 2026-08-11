@@ -6,12 +6,8 @@ coverage
 *.tsbuildinfo
 vite-dev*.log
 
-# Local visual QA browser files (kept on drive D)
-outputs/wechat-devtools/**/browser-profile/
-outputs/wechat-devtools/**/browser-cache/
-outputs/wechat-devtools/**/browser-temp/
-outputs/wechat-devtools/**/preview-bundle.js
-outputs/wechat-devtools/**/preview.html
+# 构建产物 / 预览 / QA 临时文件 —— 全部放 D:\AI，不进仓库（见 AGENTS.md）
+outputs/
 
 # Unity generated files
 unity/[Ll]ibrary/
