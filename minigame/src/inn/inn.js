@@ -40,9 +40,7 @@ function number(value, fallback) {
   return typeof value === 'number' && isFinite(value) ? value : fallback;
 }
 
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+var clamp = require('../core/math-utils').clamp;
 
 function copy(source) {
   var target = {};
@@ -50,9 +48,7 @@ function copy(source) {
   return target;
 }
 
-function deepCopy(source) {
-  return JSON.parse(JSON.stringify(source));
-}
+var deepCopy = require('../core/objects').deepCopy;
 
 function find(list, id) {
   var index;

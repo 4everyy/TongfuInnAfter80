@@ -3,19 +3,19 @@
 var content = require('../../data/content');
 
 var MAP_PACKAGES = {
-  inn: 'scene-core-v23',
-  yard: 'scene-core-v23',
-  street: 'scene-core-v23',
-  paper_mill: 'scene-s1-v23',
-  old_post: 'scene-s1-v23',
-  grain_market: 'scene-s1-v23',
-  merchant_alliance_hall: 'scene-s1-v23',
-  old_ledger_vault: 'scene-s1-v23',
-  jiangnan_branch: 'scene-s2-v23',
-  jiangnan_dock: 'scene-s2-v23',
-  river_market: 'scene-s2-v23',
-  jiangnan_spice_workshop: 'scene-s2-v23',
-  old_banquet_kitchen: 'scene-s2-v23'
+  inn: 'scene-core-v34',
+  yard: 'scene-core-v34',
+  street: 'scene-core-v34',
+  paper_mill: 'scene-s1a-v34',
+  old_post: 'scene-s1a-v34',
+  grain_market: 'scene-s1b-v34',
+  merchant_alliance_hall: 'scene-s1b-v34',
+  old_ledger_vault: 'scene-s1b-v34',
+  jiangnan_branch: 'scene-s2-v34',
+  jiangnan_dock: 'scene-s2-v34',
+  river_market: 'scene-s2-v34',
+  jiangnan_spice_workshop: 'scene-s2-v34',
+  old_banquet_kitchen: 'scene-s2-v34'
 };
 
 var TASK_PROPS = {

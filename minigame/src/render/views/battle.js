@@ -1,15 +1,12 @@
 var content = require('../../../data/content');
 var drawHud = require('./explore').drawHud;
+var clamp = require('../../core/math-utils').clamp;
 
 var roles = content.roles;
 var battles = content.battles;
 var SCENE_TOP = 42;
 var lastBattleLog = '';
 var battleLogChangedAt = 0;
-
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
 
 function role(id) {
   var index;

@@ -18,8 +18,8 @@ function shopChoice(dialogueId, shopId) {
 }
 
 const data = commerce.data;
-assert(Object.keys(data.shops).length === 3, 'Three town shops are required.');
-assert(Object.keys(data.items).length === 12, 'Twelve shop items are required.');
+assert(Object.keys(data.shops).length >= 3, 'At least three town shops are required.');
+assert(Object.keys(data.items).length >= 12, 'At least twelve shop items are required.');
 assert(shopChoice('npcv26-noodle-vendor-ma-start', 'ma-goods'), 'Ma shop is not connected to NPC dialogue.');
 assert(shopChoice('npcv26-seamstress-wen-start', 'wen-jewelry'), 'Jewelry shop is not connected to NPC dialogue.');
 assert(shopChoice('npcv26-coppersmith-han-start', 'han-armory'), 'Armory is not connected to NPC dialogue.');
@@ -60,4 +60,4 @@ assert(migrated.characters.zhangdeng.equipment.weapon === null, 'Legacy role did
 const overlay = fs.readFileSync(path.join(root, 'minigame/src/render/views/overlays.js'), 'utf8');
 ['drawShop', 'shopBuy', 'shopEquip', 'shopRole'].forEach((token) => assert(overlay.includes(token), 'Shop UI is missing ' + token));
 
-console.log('Commerce v30 validation passed: 3 shops, 12 items, limits, equipment transfer, battle bonuses and save migration.');
+console.log('Commerce v30 validation passed: shops, items, limits, equipment transfer, battle bonuses and save migration.');

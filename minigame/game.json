@@ -11,10 +11,6 @@
       "root": "subpackages/ch56"
     },
     {
-      "name": "ch78",
-      "root": "subpackages/ch78"
-    },
-    {
       "name": "s2ch910",
       "root": "subpackages/s2ch910"
     },
@@ -23,20 +19,24 @@
       "root": "subpackages/s2ch11"
     },
     {
-      "name": "scene-core-v23",
-      "root": "subpackages/scene-core-v23"
-    },
-    {
-      "name": "scene-s1-v23",
-      "root": "subpackages/scene-s1-v23"
-    },
-    {
-      "name": "scene-s2-v23",
-      "root": "subpackages/scene-s2-v23"
-    },
-    {
       "name": "npc-pop-v26",
       "root": "subpackages/npc-pop-v26"
+    },
+    {
+      "name": "scene-core-v34",
+      "root": "subpackages/scene-core-v34"
+    },
+    {
+      "name": "scene-s1a-v34",
+      "root": "subpackages/scene-s1a-v34"
+    },
+    {
+      "name": "scene-s1b-v34",
+      "root": "subpackages/scene-s1b-v34"
+    },
+    {
+      "name": "scene-s2-v34",
+      "root": "subpackages/scene-s2-v34"
     }
   ],
   "networkTimeout": {

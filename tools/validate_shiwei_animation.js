@@ -5,7 +5,8 @@ const path = require('path');
 const sharp = require('sharp');
 
 const root = path.resolve(__dirname, '..');
-const sourceRoot = path.join(root, 'outputs', 'creative-production', 'season2');
+const sourceRoot = process.env.SHIWEI_SOURCE_ROOT
+  || 'D:\\AI\\design-assets\\dengxia\\season2-ch910\\sources';
 const runtimeRoot = path.join(root, 'minigame', 'subpackages', 's2ch910', 'assets', 'art', 'characters', 'shiwei');
 const directions = ['side', 'front', 'back'];
 const errors = [];

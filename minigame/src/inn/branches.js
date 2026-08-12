@@ -7,9 +7,7 @@ var BRANCHES = {
   frontier: { id: 'frontier', name: '北境驿站', region: 'frontier', regionName: '北境驿路' },
 };
 
-function copy(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+var deepCopy = require('../core/objects').deepCopy;
 
 function stock(value, fallback) {
   var result = {};
@@ -85,14 +83,14 @@ function ensure(state, migrateCurrent) {
   });
   id = state.activeBranchId;
   if (migrateCurrent) {
-    state.branches.changfeng.inn = copy(state.inn || defaultInn('changfeng'));
+    state.branches.changfeng.inn = deepCopy(state.inn || defaultInn('changfeng'));
     state.branches.changfeng.stock = stock(state.inventory && state.inventory.stock, defaultStock('changfeng'));
-    state.regionalMarkets.guanzhong = copy(state.market || defaultMarket());
+    state.regionalMarkets.guanzhong = deepCopy(state.market || defaultMarket());
     id = state.activeBranchId = 'changfeng';
   } else {
-    state.inn = copy(state.branches[id].inn);
+    state.inn = deepCopy(state.branches[id].inn);
     state.inventory.stock = stock(state.branches[id].stock, defaultStock(id));
-    state.market = copy(state.regionalMarkets[BRANCHES[id].region] || defaultMarket());
+    state.market = deepCopy(state.regionalMarkets[BRANCHES[id].region] || defaultMarket());
   }
   state.inventory.ingredient = ingredientTotal(state);
   return state.branches[id];
@@ -101,9 +99,9 @@ function ensure(state, migrateCurrent) {
 function capture(state) {
   var id = BRANCHES[state.activeBranchId] ? state.activeBranchId : 'changfeng';
   var branch = state.branches[id] = normalizeBranch(state.branches[id], id);
-  branch.inn = copy(state.inn || defaultInn(id));
+  branch.inn = deepCopy(state.inn || defaultInn(id));
   branch.stock = stock(state.inventory && state.inventory.stock, defaultStock(id));
-  state.regionalMarkets[BRANCHES[id].region] = copy(state.market || defaultMarket());
+  state.regionalMarkets[BRANCHES[id].region] = deepCopy(state.market || defaultMarket());
   state.inventory.ingredient = ingredientTotal(state);
   return branch;
 }
@@ -112,9 +110,9 @@ function switchTo(state, id) {
   if (!BRANCHES[id] || !state.branches[id] || !state.branches[id].unlocked) return false;
   capture(state);
   state.activeBranchId = id;
-  state.inn = copy(state.branches[id].inn);
+  state.inn = deepCopy(state.branches[id].inn);
   state.inventory.stock = stock(state.branches[id].stock, defaultStock(id));
-  state.market = copy(state.regionalMarkets[BRANCHES[id].region] || defaultMarket());
+  state.market = deepCopy(state.regionalMarkets[BRANCHES[id].region] || defaultMarket());
   state.inventory.ingredient = ingredientTotal(state);
   state.dailyPlan = null;
   state.service = null;

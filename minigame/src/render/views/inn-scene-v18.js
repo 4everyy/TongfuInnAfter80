@@ -27,9 +27,7 @@ var ROLE_GLYPHS = {
   yard: '修',
 };
 
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+var clamp = require('../../core/math-utils').clamp;
 
 function find(list, id) {
   var index;

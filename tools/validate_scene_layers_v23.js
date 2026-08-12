@@ -106,6 +106,13 @@ async function validateMap(mapId, knownFlags) {
 }
 
 async function main() {
+  const activeMapIds = Object.keys(sceneV23.mapPackages).filter((mapId) => !manifest.maps[mapId].v34);
+  if (!activeMapIds.length) {
+    const report = path.join(ROOT, 'outputs', 'scene-v34-build-report.json');
+    if (!fs.existsSync(report)) fail('Scene v23 is superseded but the v34 build report is missing');
+    console.log(JSON.stringify({ maps: 0, supersededBy: 'scene-v34', fallback: true }));
+    return;
+  }
   const knownFlags = new Set();
   collectKnownFlags(content, '', knownFlags);
   const packages = Array.from(new Set(Object.values(sceneV23.mapPackages)));
@@ -120,7 +127,7 @@ async function main() {
     if (bytes > MAX_PACKAGE_BYTES) fail('Package exceeds 3.8 MB: ' + packageName);
   }
   if (totalBytes > MAX_TOTAL_BYTES) fail('Scene v23 resources exceed 4.5 MB');
-  for (const mapId of Object.keys(sceneV23.mapPackages)) await validateMap(mapId, knownFlags);
+  for (const mapId of activeMapIds) await validateMap(mapId, knownFlags);
 
   const createAssetStore = require('../minigame/src/render/assets').createAssetStore;
   if (typeof createAssetStore !== 'function') fail('AssetStore factory is unavailable');

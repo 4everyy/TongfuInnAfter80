@@ -6,10 +6,9 @@ const deep56 = require('./season1-deep-56');
 const deep78 = require('./season1-deep-78');
 const season2 = require('./season2-ch910');
 const season2ch11 = require('./season2-ch11');
-const scenePopulation = require('./scene-population');
 const npcPopulationV26 = require('./npc-population-v26');
 const allMapAccessV27 = require('./all-map-access-v27');
-const merchantStalls = require('./merchant-stalls');
+const sceneCalibrationV34 = require('./scene-calibration-v34');
 
 const roles = campaign.roles.map((role) => Object.assign({}, role, {
   originalName: role.name,
@@ -684,9 +683,8 @@ Object.keys(deep78.dialogues).forEach((id) => { dialogues[id] = deep78.dialogues
 Object.keys(season2.dialogues).forEach((id) => { dialogues[id] = season2.dialogues[id]; });
 Object.keys(season2ch11.dialogues).forEach((id) => { dialogues[id] = season2ch11.dialogues[id]; });
 allMapAccessV27.apply(maps);
-scenePopulation.apply(maps, dialogues);
 npcPopulationV26.apply(maps, dialogues);
-merchantStalls.apply(maps, dialogues);
+sceneCalibrationV34.apply(maps);
 
 const battles = {
   doorway_troublemaker: {

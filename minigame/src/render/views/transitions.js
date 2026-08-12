@@ -1,6 +1,4 @@
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+var clamp = require('../../core/math-utils').clamp;
 
 function progressOf(active) {
   return clamp((Date.now() - active.startedAt) / Math.max(1, active.duration), 0, 1);

@@ -1,8 +1,5 @@
 const chapterData = require('../../../data/chapter001');
-
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+const clamp = require('../../core/math-utils').clamp;
 
 function drawScene(ui, chapter) {
   const paper = ui.theme.colors.paper;

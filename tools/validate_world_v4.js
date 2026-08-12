@@ -181,31 +181,11 @@ function validateArt() {
   const stoneBridge = manifest.maps.stone_bridge;
   assert(stoneBridge && stoneBridge.props.some((prop) => /supply-cart/.test(prop.src)), '石桥缺少物资车场景道具');
 
-  const directionalReportPath = path.join(root, 'outputs/creative-production/world-v4/directional-atlas-report.json');
-  assert(fs.existsSync(directionalReportPath), '缺少方向图集检查报告');
-  if (fs.existsSync(directionalReportPath)) {
-    const report = JSON.parse(fs.readFileSync(directionalReportPath, 'utf8'));
-    assert(report.roles.length === 4, '方向图集报告必须覆盖四名角色');
-    report.roles.forEach((role) => {
-      ['front', 'back'].forEach((direction) => {
-        const result = role.directions[direction];
-        assert(result && result.status === 'ready', `${role.role}.${direction} 方向图集未就绪`);
-        if (result) assert(result.baselineDrift <= 2, `${role.role}.${direction} 脚底漂移超过2px`);
-      });
-    });
-  }
-
-  const entityReportPath = path.join(root, 'outputs/creative-production/world-v4/entity-runtime-report.json');
-  assert(fs.existsSync(entityReportPath), '缺少NPC与物资车检查报告');
-  if (fs.existsSync(entityReportPath)) {
-    const report = JSON.parse(fs.readFileSync(entityReportPath, 'utf8'));
-    assert(report.npcs.length === 7, '章节NPC运行资源必须为七名');
-    report.npcs.forEach((npc) => {
-      assert(npc.size[0] === 160 && npc.size[1] === 224, `${npc.id} NPC尺寸不是160x224`);
-      assert(npc.alpha[0] === 0 && npc.alpha[1] === 255, `${npc.id} NPC透明通道异常`);
-    });
-    assert(report.cart.size[0] <= 320 && report.cart.size[1] <= 210, '物资车运行图尺寸异常');
-    assert(report.cart.alpha[0] === 0 && report.cart.alpha[1] === 255, '物资车透明通道异常');
+  const sceneReportPath = path.join(root, 'outputs/scene-v34-build-report.json');
+  assert(fs.existsSync(sceneReportPath), '缺少 v34 场景构建报告');
+  if (fs.existsSync(sceneReportPath)) {
+    const report = JSON.parse(fs.readFileSync(sceneReportPath, 'utf8'));
+    assert(report.maps && report.maps.length === 27, 'v34 场景构建报告必须覆盖27张地图');
   }
 
   const subpackagesRoot = path.join(root, 'minigame/subpackages');

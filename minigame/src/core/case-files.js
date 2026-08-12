@@ -1,11 +1,8 @@
+var clamp = require('./math-utils').clamp;
 var STOCK_KEYS = ['staple', 'vegetable', 'meat', 'tea'];
 
 function number(value, fallback) {
   return typeof value === 'number' && isFinite(value) ? value : fallback;
-}
-
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
 }
 
 function ensure(state) {

@@ -1,6 +1,6 @@
 const FRAME_SIZE = { width: 192, height: 256 };
 const sceneV23 = require('./scene-v23');
-const scenePopulation = require('../../data/scene-population');
+const sceneV34 = require('./scene-v34');
 const npcPopulationV26 = require('../../data/npc-population-v26');
 const PIVOT = { x: 96, y: 244 };
 const CLIPS = {
@@ -24,13 +24,15 @@ function roleArt(extras) {
   }, extras || {});
 }
 
-function mapArt(id, width, props, packageName) {
-  const base = packageName ? `@${packageName}/maps/${id}/` : `maps/${id}/`;
+function mapArt(id, width, props) {
   return {
     characterScale: id === 'inn' ? 1.04 : 1,
+    // 此背景层仅作尺寸占位，供 scene-v23 的光照层计算使用；最终 layers 会在
+    // 本模块末尾被 scene-v34.apply 整体替换为 @scene-*-v34/maps/<id>/background.jpg，
+    // 故 src 不进入运行资源，原 packageName 形参已随之移除。
     layers: [{
       id: 'background',
-      src: id === 'inn' ? 'maps/inn/far-v9.jpg' : base + 'far.jpg',
+      src: 'maps/' + id + '/background.jpg',
       parallax: 1,
       worldWidth: width,
       worldHeight: 348,
@@ -41,8 +43,8 @@ function mapArt(id, width, props, packageName) {
   };
 }
 
-function bottomAlignedMapArt(id, width, height, packageName, y, props) {
-  const art = mapArt(id, width, props || null, packageName);
+function bottomAlignedMapArt(id, width, height, y, props) {
+  const art = mapArt(id, width, props || null);
   art.layers[0].worldHeight = height;
   art.layers[0].y = typeof y === 'number' ? y : 348 - height;
   return art;
@@ -80,23 +82,17 @@ const manifest = {
     },
   },
   maps: {
-    inn: mapArt('inn', 1000, [
-      prop('maps/inn/occluder_left_table.png', 0, 273, 326, { obstacleId: 'left-table' }),
-      prop('maps/inn/occluder_right_table.png', 681, 316, 340, { obstacleId: 'right-table' }),
-    ]),
-    yard: mapArt('yard', 900, [
-      prop('maps/yard/occluder_training_dummy.png', 766, 202, 330, { obstacleId: 'training-posts' }),
-    ]),
-    street: mapArt('street', 1200, [
-      prop('maps/street/occluder_right_shopfront.png', 1076, 117, 346, { obstacleId: 'right-shopfront' }),
-    ]),
-    locust_lane: mapArt('locust_lane', 1000, [
-      prop('maps/locust_lane/occluder_right_wall.png', 904, 54, 346, { obstacleId: 'right-wall' }),
-    ]),
+    // 公共与章节地图的背景层、前景遮挡、任务和氛围道具，统一由 scene-v34、
+    // scene-v23、npc-population-v26 在模块末尾注入。此处只
+    // 登记 worldWidth 尺寸与必须保留的运行道具（supply-cart、chain-barrier 等）。
+    // 已移除被 scene-v34 前景遮挡取代的旧 occluder 道具，以及被 v34 覆盖的
+    // 过期包名（ch34/ch56/ch78/s2ch910/s2ch11）。
+    inn: mapArt('inn', 1000),
+    yard: mapArt('yard', 900),
+    street: mapArt('street', 1200),
+    locust_lane: mapArt('locust_lane', 1000),
     tea_shed: mapArt('tea_shed', 950),
-    east_gate: mapArt('east_gate', 950, [
-      prop('maps/east_gate/occluder_left_guard_table.png', 60, 225, 329, { obstacleId: 'guard-table' }),
-    ]),
+    east_gate: mapArt('east_gate', 950),
     stone_bridge: mapArt('stone_bridge', 1050, [
       prop('maps/stone_bridge/supply-cart.png', 890, 318, 318, {
         scale: 0.55,
@@ -104,15 +100,15 @@ const manifest = {
         obstacleId: 'supply-cart',
       }),
     ]),
-    paper_mill: mapArt('paper_mill', 1180, null, 'ch34'),
-    paper_alley: mapArt('paper_alley', 1060, null, 'ch34'),
-    old_post: mapArt('old_post', 1260, null, 'ch34'),
-    north_road: mapArt('north_road', 1320, null, 'ch34'),
-    guild_warehouse: mapArt('guild_warehouse', 1180, null, 'ch34'),
-    river_yard: mapArt('river_yard', 1360, null, 'ch34'),
-    grain_market: mapArt('grain_market', 1280, null, 'ch56'),
-    guild_office: mapArt('guild_office', 1160, null, 'ch56'),
-    charity_granary: mapArt('charity_granary', 1300, null, 'ch56'),
+    paper_mill: mapArt('paper_mill', 1180),
+    paper_alley: mapArt('paper_alley', 1060),
+    old_post: mapArt('old_post', 1260),
+    north_road: mapArt('north_road', 1320),
+    guild_warehouse: mapArt('guild_warehouse', 1180),
+    river_yard: mapArt('river_yard', 1360),
+    grain_market: mapArt('grain_market', 1280),
+    guild_office: mapArt('guild_office', 1160),
+    charity_granary: mapArt('charity_granary', 1300),
     canal_checkpoint: mapArt('canal_checkpoint', 1380, [
       prop('@ch56/props/chain-barrier.png', 730, 270, 270, {
         scale: 0.42,
@@ -127,31 +123,17 @@ const manifest = {
         requires: ['c06-started'],
         obstacleId: 'relief-cart',
       }),
-    ], 'ch56'),
-    money_house: mapArt('money_house', 1260, null, 'ch78'),
-    scale_contract_lane: mapArt('scale_contract_lane', 1380, null, 'ch78'),
-    merchant_alliance_hall: mapArt('merchant_alliance_hall', 1420, null, 'ch78'),
-    old_ledger_vault: mapArt('old_ledger_vault', 1500, null, 'ch78'),
-    jiangnan_branch: bottomAlignedMapArt('jiangnan_branch', 1000, 444, 's2ch910'),
-    jiangnan_dock: bottomAlignedMapArt('jiangnan_dock', 1320, 660, 's2ch910', -210),
-    river_market: bottomAlignedMapArt('river_market', 1280, 607, 's2ch910'),
-    rain_ferry: bottomAlignedMapArt('rain_ferry', 1440, 631, 's2ch910', -145),
-    jiangnan_spice_workshop: Object.assign(bottomAlignedMapArt('jiangnan_spice_workshop', 1260, 560, 's2ch11', null, [
-      prop('@s2ch11/props/problem-spice-sack.png', 1010, 292, 292, {
-        scale: 0.42,
-        pivot: { x: 110, y: 210 },
-        requires: ['c11-market-traced'],
-        unless: ['c11-workshop-proof'],
-      }),
-    ]), { characterScale: 1.08 }),
-    old_banquet_kitchen: Object.assign(bottomAlignedMapArt('old_banquet_kitchen', 1320, 560, 's2ch11', null, [
-      prop('@s2ch11/props/charred-recipe.png', 1040, 292, 292, {
-        scale: 0.42,
-        pivot: { x: 110, y: 210 },
-        requires: ['c11-workshop-proof'],
-        unless: ['c11-shiwei-quest'],
-      }),
-    ]), { characterScale: 1.08 }),
+    ]),
+    money_house: mapArt('money_house', 1260),
+    scale_contract_lane: mapArt('scale_contract_lane', 1380),
+    merchant_alliance_hall: mapArt('merchant_alliance_hall', 1420),
+    old_ledger_vault: mapArt('old_ledger_vault', 1500),
+    jiangnan_branch: bottomAlignedMapArt('jiangnan_branch', 1000, 444),
+    jiangnan_dock: bottomAlignedMapArt('jiangnan_dock', 1320, 660, -210),
+    river_market: bottomAlignedMapArt('river_market', 1280, 607),
+    rain_ferry: bottomAlignedMapArt('rain_ferry', 1440, 631, -145),
+    jiangnan_spice_workshop: Object.assign(bottomAlignedMapArt('jiangnan_spice_workshop', 1260, 560), { characterScale: 1.08 }),
+    old_banquet_kitchen: Object.assign(bottomAlignedMapArt('old_banquet_kitchen', 1320, 560), { characterScale: 1.08 }),
   },
   characters: {
     zhangdeng: roleArt({
@@ -335,7 +317,7 @@ const manifest = {
 };
 
 sceneV23.apply(manifest.maps);
-scenePopulation.applyArt(manifest.maps);
 npcPopulationV26.applyArt(manifest.npcs, manifest.maps);
+sceneV34.apply(manifest.maps);
 
 module.exports = manifest;

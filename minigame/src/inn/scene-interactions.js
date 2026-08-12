@@ -25,9 +25,7 @@ var MICRO_PREP_IDS = {
   promote: 'promote',
 };
 
-function copy(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+var deepCopy = require('../core/objects').deepCopy;
 
 function find(list, id) {
   var index;
@@ -218,13 +216,13 @@ function actionsForObject(state, object) {
   var result = linkedStoryActions(state, object);
   var serviceRole = serviceObjectRole(state);
   if (phase === 'noon') {
-    if (serviceRole === object.role) result.push(copy(definitions.action('service')));
+    if (serviceRole === object.role) result.push(deepCopy(definitions.action('service')));
     return result;
   }
   object.actions.forEach(function (id) {
     var action = definitions.action(id);
     if (!action) return;
-    action = copy(action);
+    action = deepCopy(action);
     action.lockedReason = actionLockedReason(state, action);
     if (!action.phases || action.phases.indexOf(phase) >= 0 || action.lockedReason) result.push(action);
   });

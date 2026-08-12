@@ -29,12 +29,9 @@ var followerJoinAt = {};
 var lastPartySeen = [];
 
 // P4 江湖气息：热点分级高亮 / 调查冲击波 运行态（不写入存档）
+var clamp = require('../../core/math-utils').clamp;
 var hotspotRevealAt = {};
 var prevHotspotNear = {};
-
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
 
 function number(value, fallback) {
   return typeof value === 'number' && isFinite(value) ? value : fallback;
@@ -954,11 +951,102 @@ function drawExit(ui, item, camera) {
   }
 }
 
+function roundRectPath(ctx, x, y, w, h, r) {
+  var rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.closePath();
+}
+
+// 身份显示牌：NPC 头顶古风牌匾（深底金边 + 上沿高光 + 身份色点 + 下指尾）
+// 身份色点：角色/营业=金，任务=朱砂，其余=青
+function drawNpcNamePlate(ui, npc, x, headTopY, state) {
+  var name = npc ? npc.name : null;
+  if (!name || npc.showName === false) return;
+  var ctx = ui.ctx;
+  var colors = ui.theme.colors;
+  var fontSize = 10;
+  var maxTextW = 88;
+  var padX = 9;
+  var padY = 4;
+
+  ctx.save();
+  ctx.font = fontSize + 'px ' + ui.theme.fonts.title;
+  var textW = Math.min(maxTextW, Math.max(20, Math.ceil(ctx.measureText(name).width)));
+  ctx.restore();
+
+  var boxW = textW + padX * 2;
+  var boxH = fontSize + padY * 2;
+  var boxX = Math.round(x - boxW / 2);
+  var boxBottom = Math.round(headTopY - 4);
+  var boxY = boxBottom - boxH;
+
+  var hint = npcHintType(npc, state);
+  var accent = npc.roleId ? colors.gold
+    : (hint === 'task' ? colors.cinnabar : (hint === 'merchant' ? colors.gold : colors.jade));
+
+  ctx.save();
+  // 投影
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 5;
+  ctx.shadowOffsetY = 2;
+  roundRectPath(ctx, boxX, boxY, boxW, boxH, 4);
+  ctx.fillStyle = 'rgba(43,33,28,0.86)';
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  // 金色描边
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = colors.gold;
+  ctx.globalAlpha = 0.9;
+  roundRectPath(ctx, boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1, 3.5);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  // 上沿内侧高光
+  ctx.strokeStyle = 'rgba(245,225,170,0.28)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(boxX + 5, boxY + 2.3);
+  ctx.lineTo(boxX + boxW - 5, boxY + 2.3);
+  ctx.stroke();
+  // 身份色点
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(boxX + 6, boxY + boxH / 2, 1.7, 0, Math.PI * 2);
+  ctx.fill();
+  // 下指尾（连接牌匾与头顶）
+  ctx.fillStyle = 'rgba(43,33,28,0.86)';
+  ctx.beginPath();
+  ctx.moveTo(x - 4, boxBottom - 0.5);
+  ctx.lineTo(x, boxBottom + 5);
+  ctx.lineTo(x + 4, boxBottom - 0.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = colors.gold;
+  ctx.globalAlpha = 0.7;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // 牌匾文字
+  ui.label(name, x, boxY + boxH / 2 + 0.5, fontSize, colors.paper, 'center', ui.theme.fonts.title, maxTextW);
+}
+
 function drawNpc(ui, item, camera, current, state) {
   var scale = depthScale(current, item.sortY);
   var tuning = characterTuning(ui, current, item.source.roleId, item.source);
   var spriteHeight = NPC_HEIGHT * scale * tuning.displayScale;
-  var idleAmp = number(item.source.idleAmplitude, 1);
+  var idleAmp = number(item.source.idleAmplitude, item.source.roleId ? .35 : .2);
   var idleSeed = stringHash(item.source.id || item.source.roleId || item.source.name || '');
   var t = Date.now() / 1000;
   var bob = Math.sin(t * 2.0 + idleSeed * 6.2832) * idleAmp;
@@ -969,8 +1057,10 @@ function drawNpc(ui, item, camera, current, state) {
   ui.heroShadow(x, y, spriteHeight, tuning.shadowScale * shadowPulse, tuning.shadowAlpha);
   drawn = ui.artNpc(item.source, x, y, spriteHeight, item.x, item.y);
   if (!drawn) ui.fallbackNpc(item.source, x, y, spriteHeight);
-  if (item.source.name && item.source.showName !== false) {
-    ui.label(item.source.name, x, y - spriteHeight - 8, 10, ui.theme.colors.paper, 'center', null, 88);
+  var nameDistance = Math.hypot(state.position.x - item.x, state.position.y - item.y);
+  var nameHint = npcHintType(item.source, state);
+  if (nameHint === 'task' || nameDistance <= (item.source.roleId ? 154 : 112)) {
+    drawNpcNamePlate(ui, item.source, x, y - spriteHeight, state);
   }
   if (innScene.isBusinessMap(state) && item.source.roleId) {
     ui.hitArea(
@@ -1605,7 +1695,9 @@ function drawNpcHint(ui, item, camera, current, state) {
   t = Date.now() / 1000;
   pulse = 0.92 + 0.08 * Math.sin(t * 3);
   bob = Math.sin(t * 2) * 1.6;
-  badgeY = y - spriteHeight - 18 + bob;
+  // 若头顶有身份名牌，把状态气泡上抬，避免与名牌重叠
+  var hasNamePlate = item.source.name && item.source.showName !== false;
+  badgeY = y - spriteHeight - 18 + bob - (hasNamePlate ? 18 : 0);
   ctx = ui.ctx;
   ctx.save();
   ctx.globalAlpha = Math.min(1, proximity * 1.3);

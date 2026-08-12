@@ -66,7 +66,12 @@ function drawDialogue(ui, state) {
       break;
     }
   }
-  if (speaker) {
+  if (dialogue.speakerArtId && ui.assets.manifest.npcs && ui.assets.manifest.npcs[dialogue.speakerArtId]) {
+    var npcPortraitArt = ui.assets.manifest.npcs[dialogue.speakerArtId];
+    var npcPortraitImage = ui.assets.image(npcPortraitArt.portrait || npcPortraitArt.atlas || npcPortraitArt.sprite);
+    ui.roundedRect(panelX + 15, panelY + 14, portraitSize, portraitSize, 3, '#2b211d', '#b88a4d');
+    if (npcPortraitImage) ui.ctx.drawImage(npcPortraitImage, panelX + 19, panelY + 18, portraitSize - 8, portraitSize - 8);
+  } else if (speaker) {
     ui.roundedRect(panelX + 15, panelY + 14, portraitSize, portraitSize, 3, '#2b211d', '#b88a4d');
     ui.portrait(speaker.id, panelX + 19, panelY + 18, portraitSize - 8);
   } else {
@@ -116,7 +121,8 @@ function roleById(id) {
 }
 
 function dialogueImage(ui, id, expression, pose) {
-  var art = ui.assets.manifest.characters[id];
+  var art = ui.assets.manifest.characters[id]
+    || ui.assets.manifest.npcs && ui.assets.manifest.npcs[id];
   var dialogueArt;
   var path;
   var frame;
@@ -180,7 +186,7 @@ function drawDialogueV2(ui, state) {
   var visibleCount = dialogue.revealed ? dialogue.text.length : Math.floor(elapsed / 1000 * 24);
   var complete = visibleCount >= dialogue.text.length;
   var visibleText = complete ? dialogue.text : dialogue.text.slice(0, visibleCount);
-  var speakerId = dialogue.speakerId;
+  var speakerId = dialogue.speakerId || dialogue.speakerArtId;
   var listenerId = dialogue.listenerId;
   var panelX = compact ? 104 : 20;
   var panelWidth = compact ? ui.width - 208 : ui.width - 40;

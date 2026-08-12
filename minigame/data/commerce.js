@@ -223,7 +223,7 @@ var SHOPS = {
     greeting: '兵器不求唬人，趁手、结实、护得住同伴才算好。', items: ['elm-ruler', 'copper-staff', 'shop-iron-ruler', 'swallow-knife'],
   },
 
-  // ---- 固定商铺 NPC（merchant-stalls）----
+  // ---- 固定商铺（原 merchant-stalls.js 已移除，以下商铺为孤立定义）----
   'hao-tea-stall': {
     id: 'hao-tea-stall', npcId: 'hao-tea-kettle', name: '郝茶釜茶摊', type: 'tea', icon: 'tea',
     greeting: '新煮的茶汤，配两碟酥点，正好歇脚。', items: ['tea-brick', 'snack-plate', 'pastry-box'],

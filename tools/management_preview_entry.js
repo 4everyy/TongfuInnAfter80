@@ -3,7 +3,7 @@ var content = require('../minigame/data/content');
 var theme = require('../minigame/src/render/theme').theme;
 var management = require('../minigame/src/inn/inn');
 var store = require('../minigame/src/core/store');
-var drawManagement = require('../minigame/src/render/views/management').drawManagement;
+var drawManagement = require('../minigame/src/render/views/management-v12').drawManagement;
 
 var WIDTH = 844;
 var HEIGHT = 390;

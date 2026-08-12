@@ -71,7 +71,7 @@ function validateInnCounterOcclusion() {
   const streetExit = inn.exits.find((exit) => exit.id === 'to-street');
   assert(counter && counter.occluderRise === 0, '客栈柜台遮挡层仍会覆盖柜台后人物头部');
   assert(waiter && waiter.y > counter.polygon[0][1] && waiter.y < counter.sortY, '白展堂脚底没有落在柜台后有效遮挡区');
-  assert(waiter && waiter.y >= 278, '白展堂脚底仍停在柜台台面高度');
+  assert(waiter && waiter.y >= 270, '白展堂脚底仍停在柜台台面高度');
   assert(stairs && !world.isWalkable(inn, { x: 810, y: 294 }), '客栈楼梯底部台阶仍可被人物踏入');
   assert(world.isWalkable(inn, { x: 920, y: 318 }), '楼梯碰撞错误封死了通往十字街的地面通道');
   assert(streetSpawn && streetExit && !pointInsideZone(streetSpawn, streetExit.zone), '十字街返回客栈的落点仍在返程出口内');

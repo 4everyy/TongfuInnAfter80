@@ -4,22 +4,19 @@ var theme = require('./theme').theme;
 var layoutModule = require('./layout');
 var drawTitle = require('./views/title').drawTitle;
 var drawExplore = require('./views/explore').drawExplore;
-var drawManagement = require('./views/management').drawManagement;
-var drawManagementOverlay = require('./views/management').drawManagementOverlay;
+var drawManagement = require('./views/management-v12').drawManagement;
+var drawManagementOverlay = require('./views/management-v12').drawManagementOverlay;
 var drawOverlays = require('./views/overlays').drawOverlays;
 var drawBattle = require('./views/battle').drawBattle;
 var drawTransitions = require('./views/transitions').drawTransitions;
 var drawChapter001 = require('./views/chapter001').drawChapter001;
+var clamp = require('../core/math-utils').clamp;
 
 var WALK_FRAME_DISTANCE = 12.5;
 var MAX_ANIMATION_STEP = 72;
 var TAP_SLOP = 8;
 var JOYSTICK_RADIUS = 40;
 var JOYSTICK_TOUCH_RADIUS = 58;
-
-function clamp(value, minimum, maximum) {
-  return Math.max(minimum, Math.min(maximum, value));
-}
 
 function distance(x1, y1, x2, y2) {
   var dx = x2 - x1;
@@ -387,7 +384,7 @@ function createRenderer(canvas) {
     var drawWidth;
     var facing = npc.facing || 'down';
     if (npc.roleId) {
-      return artHero(npc.roleId, x, y, spriteHeight, facing, false, worldX, worldY, null, 'npc:' + npc.id);
+      return artHero(npc.roleId, x, y, spriteHeight, facing, false, worldX, worldY, npc.idleClip || null, 'npc:' + npc.id);
     }
     art = assets.manifest.npcs && assets.manifest.npcs[npc.artId];
     if (!art) return false;
@@ -395,7 +392,7 @@ function createRenderer(canvas) {
     image = path ? assets.image(path) : null;
     if (!image) return false;
     if (art.frameSize && art.pivot && art.clips) {
-      return drawAtlasArt(art, image, 'npc:' + npc.id, x, y, spriteHeight, facing, false, worldX, worldY, null);
+      return drawAtlasArt(art, image, 'npc:' + npc.id, x, y, spriteHeight, facing, false, worldX, worldY, npc.idleClip || null);
     }
     drawHeight = spriteHeight;
     drawWidth = image.height ? image.width * drawHeight / image.height : drawHeight * 0.6;

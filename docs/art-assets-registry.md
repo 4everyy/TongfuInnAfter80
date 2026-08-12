@@ -16,10 +16,10 @@
 
 ## 第 7、8 章已接入
 
-- `@ch78/maps/money_house/far.jpg`：雁回票号，高柜台、兑票窗口、印章墙与封闭账房。
-- `@ch78/maps/scale_contract_lane/far.jpg`：秤契巷，不同制式秤台、契纸摊与追踪后门。
-- `@ch78/maps/merchant_alliance_hall/far.jpg`：商盟会馆，对称议事空间、契约墙与隐藏机关。
-- `@ch78/maps/old_ledger_vault/far.jpg`：地下旧账库，潮湿砖库、水道、烧损账柜与季末战斗区。
+- `@scene-s1b-v34/maps/money_house/background.jpg`：雁回票号，高柜台、兑票窗口、印章墙与封闭账房。
+- `@scene-s1b-v34/maps/scale_contract_lane/background.jpg`：秤契巷，不同制式秤台、契纸摊与追踪后门。
+- `@scene-s1b-v34/maps/merchant_alliance_hall/background.jpg`：商盟会馆，对称议事空间、契约墙与隐藏机关。
+- `@scene-s1b-v34/maps/old_ledger_vault/background.jpg`：地下旧账库，潮湿砖库、水道、烧损账柜与季末战斗区。
 - 四张运行图采用 JPEG，仅包含环境结构；NPC、文字、证据和任务物件均由运行层独立绘制。
 - 生成方式：Codex 原生 ImageGen，经 Creative Production 面板`3c8d45a9-cc54-4953-b929-c20701dab745`登记，日期`2026-07-26`。
 - 源图位置：
@@ -98,6 +98,6 @@
   - `D:\AI\design-assets\dengxia\scene-v23\source\core-props-chroma-v23.png`
   - `D:\AI\design-assets\dengxia\scene-v23\source\s1-props-chroma-v23.png`
   - `D:\AI\design-assets\dengxia\scene-v23\source\s2-props-chroma-v23.png`
-- 运行资源：`minigame/subpackages/scene-core-v23`、`scene-s1-v23`、`scene-s2-v23`。
+- 运行资源：任务道具已迁入 `scene-core-v34`、`scene-s1a-v34`、`scene-s1b-v34`、`scene-s2-v34`。
 - 生成约束：原创手绘国风动画感、无中文、无演员肖像、无电视剧截图、透明可分层、符合既有地图透视与暖灯可读夜景。
 - 运行包只保留压缩后的 PNG/WebP；源图、提示词与处理中间文件仅存放 D 盘。

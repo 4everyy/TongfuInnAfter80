@@ -44,37 +44,37 @@ assert.strictEqual(summary.ready, 1, 'Retry did not recover the image');
 assert.strictEqual(summary.failed, 0, 'Recovered image remains failed');
 
 const chapterPath = store.mapPaths('grain_market')[0];
-assert(chapterPath.indexOf('@ch56/') === 0, 'Chapter 5-6 map is not registered in its subpackage');
+assert(chapterPath.indexOf('@scene-s1b-v34/') === 0, 'Chapter 5-6 map is not registered in the v34 scene subpackage');
 store.preload([chapterPath]);
 summary = store.summary([chapterPath]);
 assert.strictEqual(summary.ready, 1, 'Subpackage image did not become ready');
 assert.strictEqual(packageLoads, 1, 'Subpackage should load exactly once');
-assert(lastImageSource.indexOf('subpackages/ch56/assets/art/maps/grain_market/far.jpg') >= 0, 'Subpackage image path was resolved incorrectly');
+assert(lastImageSource.indexOf('subpackages/scene-s1b-v34/assets/art/maps/grain_market/background.jpg') >= 0, 'Subpackage image path was resolved incorrectly');
 
 const finalePath = store.mapPaths('old_ledger_vault')[0];
-assert(finalePath.indexOf('@ch78/') === 0, 'Chapter 7-8 map is not registered in its subpackage');
+assert(finalePath.indexOf('@scene-s1b-v34/') === 0, 'Chapter 7-8 map is not registered in the v34 scene subpackage');
 store.preload([finalePath]);
 summary = store.summary([finalePath]);
 assert.strictEqual(summary.ready, 1, 'Chapter 7-8 subpackage image did not become ready');
-assert.strictEqual(packageLoads, 2, 'Each chapter subpackage should load exactly once');
-assert(lastImageSource.indexOf('subpackages/ch78/assets/art/maps/old_ledger_vault/far.jpg') >= 0, 'Chapter 7-8 path was resolved incorrectly');
+assert.strictEqual(packageLoads, 1, 'Maps in the same scene package should reuse one package load');
+assert(lastImageSource.indexOf('subpackages/scene-s1b-v34/assets/art/maps/old_ledger_vault/background.jpg') >= 0, 'Chapter 7-8 path was resolved incorrectly');
 
 const season2Path = store.mapPaths('jiangnan_branch')[0];
-assert(season2Path.indexOf('@s2ch910/') === 0, 'Season 2 map is not registered in its subpackage');
+assert(season2Path.indexOf('@scene-s2-v34/') === 0, 'Season 2 map is not registered in the v34 scene subpackage');
 store.preload([season2Path]);
 summary = store.summary([season2Path]);
 assert.strictEqual(summary.ready, 1, 'Season 2 subpackage image did not become ready');
-assert.strictEqual(packageLoads, 3, 'Season 2 subpackage should load exactly once');
-assert(lastImageSource.indexOf('subpackages/s2ch910/assets/art/maps/jiangnan_branch/far.jpg') >= 0,
+assert.strictEqual(packageLoads, 2, 'Season 2 scene subpackage should load exactly once');
+assert(lastImageSource.indexOf('subpackages/scene-s2-v34/assets/art/maps/jiangnan_branch/background.jpg') >= 0,
   'Season 2 path was resolved incorrectly');
 
 const chapter11Path = store.mapPaths('jiangnan_spice_workshop')[0];
-assert(chapter11Path.indexOf('@s2ch11/') === 0, 'Chapter 11 map is not registered in its subpackage');
+assert(chapter11Path.indexOf('@scene-s2-v34/') === 0, 'Chapter 11 map is not registered in the v34 scene subpackage');
 store.preload([chapter11Path]);
 summary = store.summary([chapter11Path]);
 assert.strictEqual(summary.ready, 1, 'Chapter 11 subpackage image did not become ready');
-assert.strictEqual(packageLoads, 4, 'Chapter 11 subpackage should load exactly once');
-assert(lastImageSource.indexOf('subpackages/s2ch11/assets/art/maps/jiangnan_spice_workshop/far.jpg') >= 0,
+assert.strictEqual(packageLoads, 2, 'Chapter 11 map should reuse the Season 2 scene package');
+assert(lastImageSource.indexOf('subpackages/scene-s2-v34/assets/art/maps/jiangnan_spice_workshop/background.jpg') >= 0,
   'Chapter 11 path was resolved incorrectly');
 
 console.log('Asset store failure, retry and chapter subpackage tests passed.');
