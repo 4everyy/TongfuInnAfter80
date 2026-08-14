@@ -59,17 +59,21 @@ var ALL_NPCS = npcV26.roster.concat(npcV37.roster).map(function (entry) {
 var NPC_LOOKUP = {};
 ALL_NPCS.forEach(function (entry) { NPC_LOOKUP[entry.id] = entry; });
 
-function loopPoints(center) {
-  var left = center.x - REGION_SIZE.width / 2;
-  var right = center.x + REGION_SIZE.width / 2;
-  var top = center.y - REGION_SIZE.height / 2;
-  var bottom = center.y + REGION_SIZE.height / 2;
+function loopPoints(center, regionIndex) {
   var points = [];
   var index;
-  for (index = 0; index <= 8; index += 1) points.push({ x: left + REGION_SIZE.width * index / 8, y: top });
-  for (index = 1; index <= 7; index += 1) points.push({ x: right, y: top + REGION_SIZE.height * index / 8 });
-  for (index = 0; index <= 8; index += 1) points.push({ x: right - REGION_SIZE.width * index / 8, y: bottom });
-  for (index = 1; index <= 7; index += 1) points.push({ x: left, y: bottom - REGION_SIZE.height * index / 8 });
+  var radiusX = REGION_SIZE.width / 2;
+  var radiusY = REGION_SIZE.height / 2;
+  for (index = 0; index < 32; index += 1) {
+    var angle = -Math.PI * 0.75 + Math.PI * 2 * index / 32;
+    var seed = regionIndex * 0.73;
+    var radialX = 1 + Math.sin(angle * 3 + seed) * 0.035 + Math.cos(angle * 5 - seed) * 0.018;
+    var radialY = 1 + Math.cos(angle * 2 - seed) * 0.055 + Math.sin(angle * 4 + seed) * 0.02;
+    points.push({
+      x: center.x + Math.cos(angle) * radiusX * radialX + Math.sin(angle * 2 + seed) * 14,
+      y: center.y + Math.sin(angle) * radiusY * radialY + Math.cos(angle * 3 - seed) * 10,
+    });
+  }
   return points;
 }
 
@@ -105,7 +109,7 @@ function tileLabel(type, region, index) {
 
 var TILES = [];
 REGIONS.forEach(function (region, regionIndex) {
-  var points = loopPoints(region.center);
+  var points = loopPoints(region.center, regionIndex);
   points.forEach(function (point, index) {
     var type = tileType(index);
     var landmarkIndex = LANDMARK_POSITIONS.indexOf(index);

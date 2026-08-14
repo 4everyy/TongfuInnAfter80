@@ -63,6 +63,7 @@ const manifest = {
   root: 'assets/art/',
   board: {
     background: 'board/wuxia-world-v3.jpg',
+    tokenAtlas: 'board/token-atlas-v4.png',
   },
   ui: {
     presentation: {

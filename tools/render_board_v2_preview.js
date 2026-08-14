@@ -47,8 +47,10 @@ renderPreviews().catch(function (error) {
 
 async function renderPreviews() {
   var outputDir = path.resolve(__dirname, '..', 'outputs');
-  var outputPath = path.join(outputDir, 'grand-board-v2-preview.png');
-  var rollingPath = path.join(outputDir, 'grand-board-v2-dice-preview.png');
+  var outputPath = path.join(outputDir, 'grand-board-v5-preview.png');
+  var rollingPath = path.join(outputDir, 'grand-board-v5-dice-preview.png');
+  var jiangnanPath = path.join(outputDir, 'grand-board-v5-jiangnan-preview.png');
+  var jiangnanState;
   renderer.render(state);
   await new Promise(function (resolve) { setTimeout(resolve, 30); });
   renderer.render(state);
@@ -65,6 +67,22 @@ async function renderPreviews() {
   renderer.render(state);
   fs.writeFileSync(rollingPath, canvas.toBuffer('image/png'));
   console.log(rollingPath);
+
+  jiangnanState = store.freshState();
+  boardSystem.start(jiangnanState);
+  jiangnanState.board.tileId = 'r7-0';
+  jiangnanState.board.lastTileId = 'r7-0';
+  jiangnanState.board.moving = false;
+  jiangnanState.board.rollingUntil = 0;
+  jiangnanState.board.rollStartedAt = 0;
+  boardSystem.definition.tiles.forEach(function (tile) {
+    if (tile.regionIndex === 7 || tile.type === 'landmark') jiangnanState.board.discovered[tile.id] = true;
+  });
+  renderer.render(jiangnanState);
+  await new Promise(function (resolve) { setTimeout(resolve, 16); });
+  renderer.render(jiangnanState);
+  fs.writeFileSync(jiangnanPath, canvas.toBuffer('image/png'));
+  console.log(jiangnanPath);
 }
 
 function definitionDiscovery(target) {

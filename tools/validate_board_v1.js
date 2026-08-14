@@ -46,6 +46,8 @@ function assignedNpcIds() {
 assert.strictEqual(definition.tiles.length, 288, '天下棋盘必须为 288 格');
 assert(artManifest.board && artManifest.board.background, '棋盘缺少武侠背景登记');
 assert(fs.existsSync(path.resolve(__dirname, '..', 'minigame', artManifest.root, artManifest.board.background)), '棋盘武侠背景资源不存在');
+assert(artManifest.board.tokenAtlas, '棋盘缺少高级格子图标图集登记');
+assert(fs.existsSync(path.resolve(__dirname, '..', 'minigame', artManifest.root, artManifest.board.tokenAtlas)), '棋盘高级格子图标图集不存在');
 assert.strictEqual(definition.regions.length, 9, '天下棋盘必须包含九个区域');
 definition.regions.forEach(function (region) {
   assert.strictEqual(definition.tiles.filter(function (tile) { return tile.regionId === region.id; }).length, 32, region.name + ' 必须包含 32 格');

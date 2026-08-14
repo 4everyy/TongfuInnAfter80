@@ -13,6 +13,20 @@ var TYPE_COLORS = {
   rest: '#74677a',
 };
 
+var TOKEN_INDEX = {
+  landmark: 0,
+  property: 1,
+  npc: 2,
+  event: 3,
+  supply: 4,
+  battle: 5,
+  chance: 6,
+  rest: 7,
+};
+
+var TOKEN_FRAME = 128;
+var TOKEN_COLUMNS = 4;
+
 function clamp(value, minimum, maximum) {
   return Math.max(minimum, Math.min(maximum, value));
 }
@@ -25,6 +39,44 @@ function easeOut(value) {
   return 1 - Math.pow(1 - clamp(value, 0, 1), 3);
 }
 
+function routeSeed(from, to) {
+  var key = from.id < to.id ? from.id + '|' + to.id : to.id + '|' + from.id;
+  var value = 0;
+  for (var index = 0; index < key.length; index += 1) value = (value * 31 + key.charCodeAt(index)) % 9973;
+  return value;
+}
+
+function routeCurve(from, to) {
+  var first = from.id < to.id ? from : to;
+  var second = from.id < to.id ? to : from;
+  var dx = second.x - first.x;
+  var dy = second.y - first.y;
+  var distance = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+  var seed = routeSeed(from, to);
+  var crossRegion = from.regionId !== to.regionId;
+  var bend = crossRegion ? clamp(distance * 0.105, 38, 96) : 4 + seed % 6;
+  var direction = seed % 2 ? 1 : -1;
+  return {
+    control: {
+      x: (first.x + second.x) / 2 - dy / distance * bend * direction,
+      y: (first.y + second.y) / 2 + dx / distance * bend * direction,
+    },
+    crossRegion: crossRegion,
+  };
+}
+
+function quadraticPoint(from, control, to, progress) {
+  var inverse = 1 - progress;
+  return {
+    x: inverse * inverse * from.x + 2 * inverse * progress * control.x + progress * progress * to.x,
+    y: inverse * inverse * from.y + 2 * inverse * progress * control.y + progress * progress * to.y,
+  };
+}
+
+function routePoint(from, to, progress) {
+  return quadraticPoint(from, routeCurve(from, to).control, to, progress);
+}
+
 function boardPosition(board) {
   var current = definition.tile(board.tileId);
   var previous;
@@ -32,10 +84,7 @@ function boardPosition(board) {
   if (!board.moving || board.rollingUntil || !board.lastTileId || board.lastTileId === board.tileId) return { x: current.x, y: current.y };
   previous = definition.tile(board.lastTileId);
   progress = clamp(1 - (Number(board.nextStepAt) - Date.now()) / 180, 0, 1);
-  return {
-    x: previous.x + (current.x - previous.x) * progress,
-    y: previous.y + (current.y - previous.y) * progress,
-  };
+  return routePoint(previous, current, progress);
 }
 
 function camera(ui, board) {
@@ -95,7 +144,7 @@ function drawParchment(ui, view) {
   ctx.restore();
 }
 
-function drawWuxiaBackdrop(ui, view) {
+function drawWuxiaBackdrop(ui, view, region) {
   var ctx = ui.ctx;
   var boardArt = ui.assets.manifest.board || {};
   var image = boardArt.background && ui.assets.image(boardArt.background);
@@ -109,6 +158,8 @@ function drawWuxiaBackdrop(ui, view) {
   var cameraX;
   var cameraY;
   var wash;
+  var focus;
+  var vignette;
   if (!image || !image.width || !image.height) {
     drawParchment(ui, view);
     return;
@@ -127,12 +178,25 @@ function drawWuxiaBackdrop(ui, view) {
 
   ctx.drawImage(image, cameraX, cameraY, sourceWidth, sourceHeight, 0, top, ui.width, height);
 
-  // A mineral-pigment wash preserves route readability without hiding the landscape.
+  // A restrained mineral wash binds the active region to the painted landscape.
   wash = ctx.createLinearGradient(0, top, 0, ui.height);
-  wash.addColorStop(0, '#f4e3b94a');
-  wash.addColorStop(0.48, '#e8d39b24');
-  wash.addColorStop(1, '#49342154');
+  wash.addColorStop(0, '#f4e3b92d');
+  wash.addColorStop(0.48, (region ? region.color : '#8b684b') + '12');
+  wash.addColorStop(1, '#49342148');
   ctx.fillStyle = wash;
+  ctx.fillRect(0, top, ui.width, height);
+
+  focus = ctx.createRadialGradient(ui.width * 0.5, top + height * 0.58, 24, ui.width * 0.5, top + height * 0.58, ui.width * 0.56);
+  focus.addColorStop(0, '#f9e9bc35');
+  focus.addColorStop(0.58, '#f0dca715');
+  focus.addColorStop(1, '#f0dca700');
+  ctx.fillStyle = focus;
+  ctx.fillRect(0, top, ui.width, height);
+
+  vignette = ctx.createRadialGradient(ui.width * 0.5, top + height * 0.45, ui.width * 0.28, ui.width * 0.5, top + height * 0.45, ui.width * 0.73);
+  vignette.addColorStop(0, '#261b1500');
+  vignette.addColorStop(1, '#261b153d');
+  ctx.fillStyle = vignette;
   ctx.fillRect(0, top, ui.width, height);
 
   ctx.save();
@@ -273,12 +337,12 @@ function drawRegion(ui, region, view, index) {
   ctx.save();
   regionPath(ctx, x, y, width, height, index + 1);
   gradient = ctx.createLinearGradient(x, y, x + width, y + height);
-  gradient.addColorStop(0, region.color + '34');
-  gradient.addColorStop(0.52, '#f0e1b628');
-  gradient.addColorStop(1, region.color + '18');
+  gradient.addColorStop(0, region.color + '26');
+  gradient.addColorStop(0.52, '#f0e1b618');
+  gradient.addColorStop(1, region.color + '0d');
   ctx.fillStyle = gradient;
   ctx.fill();
-  ctx.globalAlpha = 0.62;
+  ctx.globalAlpha = 0.34;
   ctx.strokeStyle = '#efe0b3';
   ctx.lineWidth = 1.4;
   ctx.stroke();
@@ -301,8 +365,60 @@ function drawRegion(ui, region, view, index) {
   ctx.restore();
 }
 
+function traceRoute(ctx, from, control, to) {
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.quadraticCurveTo(control.x, control.y, to.x, to.y);
+}
+
+function routeStyle(from, to, secondary) {
+  var regionId = from.regionId;
+  if (from.regionId !== to.regionId || secondary) {
+    return { kind: 'bridge', shadow: '#180f0ddd', rim: '#743329', bed: '#c3934b', detail: '#f2d28c' };
+  }
+  if (regionId === 'canal-ring' || regionId === 'jiangnan-ring' || regionId === 'spice-ring') {
+    return { kind: 'water', shadow: '#10201ee0', rim: '#346a63', bed: '#ae8750', detail: '#edd5a0' };
+  }
+  if (regionId === 'outer-road-ring' || regionId === 'east-gate-ring') {
+    return { kind: 'stone', shadow: '#171914df', rim: '#596348', bed: '#b2a46f', detail: '#e6d4a2' };
+  }
+  if (regionId === 'paper-ring' || regionId === 'alliance-ring') {
+    return { kind: 'ink', shadow: '#171315df', rim: '#66564f', bed: '#b9a374', detail: '#ead8ad' };
+  }
+  return { kind: 'town', shadow: '#160f0de2', rim: '#76542f', bed: '#c8a35c', detail: '#f1d99a' };
+}
+
+function drawRouteDetail(ctx, from, control, to, style, secondary) {
+  var samples = secondary ? [0.34, 0.66] : [0.24, 0.5, 0.76];
+  samples.forEach(function (progress) {
+    var point = quadraticPoint(from, control, to, progress);
+    var inverse = 1 - progress;
+    var tangentX = 2 * inverse * (control.x - from.x) + 2 * progress * (to.x - control.x);
+    var tangentY = 2 * inverse * (control.y - from.y) + 2 * progress * (to.y - control.y);
+    var length = Math.max(1, Math.sqrt(tangentX * tangentX + tangentY * tangentY));
+    var normalX = -tangentY / length;
+    var normalY = tangentX / length;
+    ctx.strokeStyle = style.detail;
+    ctx.fillStyle = style.detail;
+    ctx.globalAlpha = secondary ? 0.58 : 0.46;
+    if (style.kind === 'water' || style.kind === 'bridge') {
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(point.x - normalX * 4.5, point.y - normalY * 4.5);
+      ctx.lineTo(point.x + normalX * 4.5, point.y + normalY * 4.5);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, style.kind === 'stone' ? 1.5 : 1.15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
 function drawRoads(ui, view) {
   var ctx = ui.ctx;
+  var drawn = {};
   ctx.save();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -310,34 +426,91 @@ function drawRoads(ui, view) {
     var from = screenPoint(tile, view);
     if (!visible(from, ui, 240)) return;
     (tile.next || []).forEach(function (targetId, index) {
-      var to = screenPoint(definition.tile(targetId), view);
+      var target = definition.tile(targetId);
+      var edgeKey = tile.id < target.id ? tile.id + '|' + target.id : target.id + '|' + tile.id;
+      var to = screenPoint(target, view);
+      var curve;
+      var control;
+      var secondary = index > 0 || tile.regionId !== target.regionId;
+      var style;
+      if (drawn[edgeKey]) return;
+      drawn[edgeKey] = true;
       if (!visible(to, ui, 240)) return;
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
-      ctx.strokeStyle = index === 0 ? '#241812d9' : '#6e2f29d0';
-      ctx.lineWidth = index === 0 ? 13 : 9;
-      if (ctx.setLineDash) ctx.setLineDash(index === 0 ? [] : [7, 7]);
+      curve = routeCurve(tile, target);
+      control = { x: curve.control.x - view.x, y: curve.control.y - view.y + 24 };
+      style = routeStyle(tile, target, secondary);
+      if (ctx.setLineDash) ctx.setLineDash(secondary ? [9, 7] : []);
+      traceRoute(ctx, from, control, to);
+      ctx.strokeStyle = style.shadow;
+      ctx.lineWidth = secondary ? 12 : 17;
       ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
-      ctx.strokeStyle = index === 0 ? '#d8bc79' : '#d39a4f';
-      ctx.lineWidth = index === 0 ? 7 : 4;
+      traceRoute(ctx, from, control, to);
+      ctx.strokeStyle = style.rim;
+      ctx.lineWidth = secondary ? 8 : 12;
       ctx.stroke();
-      if (index === 0) {
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.strokeStyle = '#62492f99';
-        ctx.lineWidth = 1.2;
-        if (ctx.setLineDash) ctx.setLineDash([2, 9]);
-        ctx.stroke();
-        if (ctx.setLineDash) ctx.setLineDash([]);
-      }
+      traceRoute(ctx, from, control, to);
+      ctx.strokeStyle = style.bed;
+      ctx.lineWidth = secondary ? 4.5 : 7;
+      ctx.stroke();
+      if (ctx.setLineDash) ctx.setLineDash([]);
+      traceRoute(ctx, from, control, to);
+      ctx.strokeStyle = style.detail + (secondary ? '94' : '70');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      drawRouteDetail(ctx, from, control, to, style, secondary);
     });
   });
   if (ctx.setLineDash) ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawPremiumTileArt(ui, type, x, y, size, alpha) {
+  var boardArt = ui.assets.manifest.board || {};
+  var atlas = boardArt.tokenAtlas && ui.assets.image(boardArt.tokenAtlas);
+  var index = TOKEN_INDEX[type];
+  var column;
+  var row;
+  if (!atlas || index == null) return false;
+  column = index % TOKEN_COLUMNS;
+  row = Math.floor(index / TOKEN_COLUMNS);
+  ui.ctx.save();
+  ui.ctx.globalAlpha = alpha == null ? 1 : alpha;
+  ui.ctx.drawImage(
+    atlas,
+    column * TOKEN_FRAME,
+    row * TOKEN_FRAME,
+    TOKEN_FRAME,
+    TOKEN_FRAME,
+    x - size / 2,
+    y - size / 2,
+    size,
+    size
+  );
+  ui.ctx.restore();
+  return true;
+}
+
+function drawOwnershipRibbon(ctx, x, y, radius, owner) {
+  var color = owner === 'player' ? '#2f7d67' : owner === 'rival-a' ? '#386f78' : '#a53f33';
+  ctx.save();
+  ctx.fillStyle = '#281913cc';
+  ctx.beginPath();
+  ctx.moveTo(x - radius - 8, y - 9);
+  ctx.lineTo(x - radius + 7, y - 9);
+  ctx.lineTo(x - radius + 7, y + 11);
+  ctx.lineTo(x - radius - 1, y + 7);
+  ctx.lineTo(x - radius - 8, y + 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x - radius - 6, y - 7);
+  ctx.lineTo(x - radius + 5, y - 7);
+  ctx.lineTo(x - radius + 5, y + 8);
+  ctx.lineTo(x - radius - 1, y + 5);
+  ctx.lineTo(x - radius - 6, y + 9);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 
@@ -428,6 +601,8 @@ function drawTile(ui, board, tile, view, current) {
   var radius = tile.type === 'landmark' ? 23 : 17;
   var fill = discovered ? TYPE_COLORS[tile.type] : '#8f8778';
   var pulse;
+  var premiumSize = tile.type === 'landmark' ? 56 : 43;
+  var premiumDrawn;
   if (!visible(point, ui, 54)) return;
   if (property) fill = property.owner === 'player' ? '#3f7860' : property.owner === 'rival-a' ? '#4e756c' : '#a44e3e';
   ctx.save();
@@ -445,8 +620,8 @@ function drawTile(ui, board, tile, view, current) {
   ctx.beginPath();
   ctx.ellipse(point.x, point.y + radius * 0.52, radius * 0.92, radius * 0.38, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalAlpha = discovered ? 1 : 0.62;
-  ctx.fillStyle = '#d9b766';
+  ctx.globalAlpha = discovered ? 1 : 0.58;
+  ctx.fillStyle = active ? '#f2cd68' : '#8f6b37';
   ctx.beginPath();
   for (var side = 0; side < 8; side += 1) {
     var angle = -Math.PI / 8 + side * Math.PI / 4;
@@ -457,26 +632,32 @@ function drawTile(ui, board, tile, view, current) {
   }
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = fill;
+  ctx.fillStyle = '#261a15';
   ctx.beginPath();
   ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = active ? '#fff0b8' : '#4b382c';
-  ctx.lineWidth = active ? 2.6 : 1.4;
-  ctx.stroke();
-  ctx.globalAlpha = 0.28;
-  ctx.strokeStyle = '#fff4d0';
-  ctx.beginPath();
-  ctx.arc(point.x - 2, point.y - 2, radius - 4, Math.PI * 1.05, Math.PI * 1.82);
+  ctx.strokeStyle = active ? '#fff1a9' : '#3d2b21';
+  ctx.lineWidth = active ? 2.8 : 1.5;
   ctx.stroke();
   ctx.globalAlpha = 1;
-  drawTileIcon(ctx, tile.type, point.x, point.y, tile.type === 'landmark' ? 1 : 0.78, tile.type !== 'property' || !!property);
+  premiumDrawn = drawPremiumTileArt(ui, tile.type, point.x, point.y, premiumSize, discovered ? 1 : 0.42);
+  if (!premiumDrawn) {
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, radius - 2, 0, Math.PI * 2);
+    ctx.fill();
+    drawTileIcon(ctx, tile.type, point.x, point.y, tile.type === 'landmark' ? 1 : 0.78, tile.type !== 'property' || !!property);
+  }
+  if (property) drawOwnershipRibbon(ctx, point.x, point.y, radius, property.owner);
   if (property && property.level > 1) {
-    ctx.fillStyle = '#f7e7bd';
+    ctx.fillStyle = '#b5392f';
     ctx.beginPath();
     ctx.arc(point.x + radius - 1, point.y - radius + 2, 8, 0, Math.PI * 2);
     ctx.fill();
-    ui.label(String(property.level), point.x + radius - 1, point.y - radius + 2, 8, '#4a3327', 'center', ui.theme.fonts.body);
+    ctx.strokeStyle = '#e5bd61';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ui.label(String(property.level), point.x + radius - 1, point.y - radius + 2, 8, '#fff0c5', 'center', ui.theme.fonts.body);
   }
   ctx.restore();
   if (tile.type === 'landmark' && discovered) {
@@ -492,7 +673,7 @@ function drawTile(ui, board, tile, view, current) {
 function drawWorld(ui, state, view) {
   var board = state.board;
   var current = definition.tile(board.tileId);
-  drawWuxiaBackdrop(ui, view);
+  drawWuxiaBackdrop(ui, view, definition.region(current.regionId));
   definition.regions.forEach(function (region, index) { drawRegion(ui, region, view, index); });
   drawRoads(ui, view);
   definition.tiles.forEach(function (tile) { drawTile(ui, board, tile, view, current); });
