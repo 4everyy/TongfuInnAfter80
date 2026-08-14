@@ -13,11 +13,14 @@ function assert(condition, message) {
 }
 
 const source = fs.readFileSync(path.join(root, 'minigame/src/render/views/management-v12.js'), 'utf8');
-const shim = fs.readFileSync(path.join(root, 'minigame/src/render/views/management.js'), 'utf8');
+const exploreSource = fs.readFileSync(path.join(root, 'minigame/src/render/views/explore.js'), 'utf8');
+const sceneSource = fs.readFileSync(path.join(root, 'minigame/src/render/views/inn-scene-v18.js'), 'utf8');
 const state = store.freshState();
 
 assert(state.managementView === 'scene', 'New saves must enter the full-scene management view.');
-assert(/require\('\.\/management-v12'\)/.test(shim), 'The legacy management renderer must not remain active.');
+assert(state.innScene && state.innScene.activePage === null, 'New saves must start in the live inn scene.');
+assert(/require\('\.\/inn-scene-v18'\)/.test(exploreSource), 'Exploration must render the live inn interaction layer.');
+assert(/drawObjectLayer/.test(sceneSource) && /drawScreenUi/.test(sceneSource), 'The live inn scene must expose object and overlay rendering.');
 assert(!/managementNavToggle|COMPACT_PANEL_X|DETAIL_PANEL_X|drawDetailShell/.test(source), 'The v12 renderer must not contain the old drawer navigation.');
 assert(/FONT = \{ title: 20, section: 16, body: 12, caption: 10 \}/.test(source), 'Management typography must use the four approved sizes.');
 assert(/jobColumns: \[360, 490, 620\]/.test(source), 'Character job stamps must use three evenly spaced columns.');

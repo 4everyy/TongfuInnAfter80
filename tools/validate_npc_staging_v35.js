@@ -10,7 +10,7 @@ function assert(condition, message) {
 }
 
 function managed(npc) {
-  return /^npcv26-/.test(npc.id || '');
+  return /^npcv(?:26|37)-/.test(npc.id || '');
 }
 
 content.maps.forEach((map) => {

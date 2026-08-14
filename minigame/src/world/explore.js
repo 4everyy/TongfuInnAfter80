@@ -425,7 +425,7 @@ function blockedExitMessage(state, exit) {
 function checkExits(state, current) {
   const exit = current.exits.find((item) => inZone(state.position, item.zone));
   if (state.exitRearmMapId === current.id) {
-    if (exit) {
+    if (exit || state.exitCooldown > 0) {
       state.blockedExitId = null;
       return;
     }

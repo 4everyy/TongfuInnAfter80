@@ -23,6 +23,10 @@
       "root": "subpackages/npc-pop-v26"
     },
     {
+      "name": "npc-pop-v37",
+      "root": "subpackages/npc-pop-v37"
+    },
+    {
       "name": "scene-core-v34",
       "root": "subpackages/scene-core-v34"
     },

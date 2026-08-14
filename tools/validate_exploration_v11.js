@@ -92,6 +92,26 @@ function validateExitRearm() {
   assert(!!state.sceneTransition && state.sceneTransition.targetMapId === 'street', '主动重新进入出口后没有正常切换场景');
 }
 
+function validateArrivalNoOscillation() {
+  // Regression for the inn<->street (and inn<->yard) bounce loop:
+  // arriving at a spawn that sits just outside a return exit zone must not
+  // re-trigger that exit while the post-transition cooldown ticks down,
+  // even when the player drifts toward the door at dead-zone speed.
+  [
+    { mapId: 'inn', spawnId: 'streetDoor' },
+    { mapId: 'inn', spawnId: 'yardDoor' },
+    { mapId: 'street', spawnId: 'innDoor' },
+  ].forEach((entry) => {
+    const state = flagsState();
+    world.spawn(state, entry.mapId, entry.spawnId);
+    for (let frame = 0; frame < 60; frame += 1) {
+      state.position.y -= 0.3; // ~18px/s upward drift, just above the 0.12 dead-zone
+      world.update(state, { move: { x: 0, y: 0 } }, 0.016);
+      assert(!state.sceneTransition, `${entry.mapId}.${entry.spawnId} 到达后冷却期内被返程出口反复触发，形成场景切换死循环`);
+    }
+  });
+}
+
 function validateNpcScenePlacement() {
   content.maps.forEach((map) => {
     map.npcs.forEach((npc) => {
@@ -254,6 +274,7 @@ validateRouteComponents();
 validateReachableExits();
 validateInnCounterOcclusion();
 validateExitRearm();
+validateArrivalNoOscillation();
 validateNpcScenePlacement();
 validateNpcFootCollision();
 validateSweptCollision();

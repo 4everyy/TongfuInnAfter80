@@ -4,6 +4,7 @@ var doorwayCrisis = require('../../../data/doorway-crisis');
 var innSceneView = require('./inn-scene-v18');
 var innScene = require('../../inn/scene-interactions');
 var uiArt = require('../ui-art-v29');
+var boons = require('../../../data/npc-signature-boon-v36');
 
 var SCENE_WIDTH = 844;
 var SCENE_Y = 42;
@@ -809,6 +810,14 @@ function roundedRectPath(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+function shortExitDestination(rawName) {
+  var name = String(rawName || '').trim();
+  name = name.replace(/^长风客栈/, '').replace(/^雁回镇/, '');
+  if (!name) name = String(rawName || '前路');
+  if (name.length > 4) name = name.slice(-3);
+  return name;
+}
+
 function drawExit(ui, item, camera) {
   var ctx = ui.ctx;
   var x = item.x - camera;
@@ -818,10 +827,10 @@ function drawExit(ui, item, camera) {
   var accent = locked ? '#8a7a5c' : ui.theme.colors.gold;
   var glowColor = locked ? 'rgba(167,149,112,0.40)' : 'rgba(213,167,74,0.58)';
   var t = Date.now() / 1000;
-  var pulse = 0.92 + (Math.sin(t * 2.2) * 0.5 + 0.5) * 0.08;
+  var near = item.distance < 138;
+  var pulse = 0.92 + (Math.sin(t * 2.2) * 0.5 + 0.5) * (near ? 0.10 : 0.08);
   var bob = Math.sin(t * 1.6) * 1.4;
   var badgeY = y + bob;
-  var near = item.distance < 138;
 
   // 地面光池：径向渐变椭圆光晕，强化"传送点"空间感
   ctx.save();
@@ -849,16 +858,17 @@ function drawExit(ui, item, camera) {
   ctx.fill();
   ctx.restore();
 
-  // 呼吸光晕（仅解锁）
+  // 呼吸光晕（仅解锁）：靠近时光晕更亮、外扩，形成"入口被唤醒"的反馈
   if (!locked) {
-    ctx.globalAlpha = 0.55 * pulse;
-    var glowGrad = ctx.createRadialGradient(x, badgeY, 8, x, badgeY, 27);
+    ctx.globalAlpha = (near ? 0.72 : 0.55) * pulse;
+    var glowR = near ? 30 : 27;
+    var glowGrad = ctx.createRadialGradient(x, badgeY, 8, x, badgeY, glowR);
     glowGrad.addColorStop(0, 'rgba(213,167,74,0)');
     glowGrad.addColorStop(0.55, 'rgba(213,167,74,0.38)');
     glowGrad.addColorStop(1, 'rgba(213,167,74,0)');
     ctx.fillStyle = glowGrad;
     ctx.beginPath();
-    ctx.arc(x, badgeY, 27, 0, Math.PI * 2);
+    ctx.arc(x, badgeY, glowR, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
   }
@@ -893,60 +903,79 @@ function drawExit(ui, item, camera) {
   uiArt.drawIcon(ui, locked ? 'lock' : 'exit', x, badgeY, 16, accent);
   ctx.restore();
 
-  // 近距离提示卡片：渐变卷轴 + 装饰点 + 下指三角
+  // 近距离提示卡片：路引门牌 —— 标注目的地，暖纸 + 朱砂钤印分隔 + 状态副标
   if (near) {
-    var text = locked ? '道路未开放' : '前往下一处';
-    var textColor = locked ? ui.theme.colors.wood : ui.theme.colors.ink;
+    var destRaw = '';
+    try { destRaw = world.map(item.source.target).name || ''; } catch (e) { destRaw = ''; }
+    var dest = shortExitDestination(destRaw);
+    var mainText = locked ? '道路未通' : dest;
+    var subText = locked ? '尚需时日' : '过此即至';
+    var mainColor = locked ? ui.theme.colors.wood : ui.theme.colors.ink;
+    var subColor = locked ? '#9a8a68' : ui.theme.colors.cinnabar;
+    var borderColor = locked ? '#8a7a5c' : accent;
     ctx.save();
-    ctx.font = '9px ' + ui.theme.fonts.title;
-    var tw = ctx.measureText(text).width;
-    var cardW = Math.min(104, tw + 38);
-    var cardH = 22;
+    ctx.font = '11px ' + ui.theme.fonts.title;
+    var tw = ctx.measureText(mainText).width;
+    ctx.font = '8px ' + ui.theme.fonts.title;
+    var sw = ctx.measureText(subText).width;
+    var cardW = Math.min(120, Math.max(tw, sw) + 34);
+    var cardH = 31;
     var cardX = clamp(x - cardW / 2, 6, ui.width - cardW - 6);
     var cardY = badgeY - 27 - 8 - cardH;
 
     // 卡片投影
-    ctx.globalAlpha = 0.22;
+    ctx.globalAlpha = 0.24;
     ctx.fillStyle = '#150d07';
-    roundedRectPath(ctx, cardX + 1, cardY + 3, cardW, cardH, ui.theme.radius.control);
+    roundedRectPath(ctx, cardX + 1, cardY + 4, cardW, cardH, 5);
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    // 卡片主体（渐变 + 描边）
+    // 卡片主体（暖纸渐变 + 细描边）
     var cardGrad = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
-    cardGrad.addColorStop(0, '#f7eccfee');
-    cardGrad.addColorStop(1, '#e4d1a4ee');
+    cardGrad.addColorStop(0, '#f8eed6f5');
+    cardGrad.addColorStop(1, '#e6d2a6f0');
     ctx.fillStyle = cardGrad;
-    roundedRectPath(ctx, cardX, cardY, cardW, cardH, ui.theme.radius.control);
+    roundedRectPath(ctx, cardX, cardY, cardW, cardH, 5);
     ctx.fill();
-    ctx.lineWidth = 1.1;
-    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = borderColor;
     ctx.stroke();
 
-    // 装饰圆点
-    ctx.fillStyle = accent;
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.arc(cardX + 7, cardY + cardH / 2, 1.4, 0, Math.PI * 2);
-    ctx.arc(cardX + cardW - 7, cardY + cardH / 2, 1.4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    // 顶部朱砂分隔线 + 两端钤印圆点（仅解锁，仿路引印章）
+    if (!locked) {
+      ctx.globalAlpha = 0.85;
+      ctx.strokeStyle = ui.theme.colors.cinnabar;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cardX + 9, cardY + 9);
+      ctx.lineTo(cardX + cardW - 9, cardY + 9);
+      ctx.stroke();
+      ctx.fillStyle = ui.theme.colors.cinnabar;
+      ctx.beginPath();
+      ctx.arc(cardX + 5.5, cardY + 9, 1.3, 0, Math.PI * 2);
+      ctx.arc(cardX + cardW - 5.5, cardY + 9, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // 主文字（目的地名）
+    ui.label(mainText, cardX + cardW / 2, cardY + 16, 11, mainColor, 'center', ui.theme.fonts.title, cardW - 14);
+    // 副标（开放 / 锁定状态）
+    ui.label(subText, cardX + cardW / 2, cardY + 25, 8, subColor, 'center', ui.theme.fonts.title, cardW - 12);
 
     // 下指三角（连接卡片与徽章）
     var px = clamp(x, cardX + 10, cardX + cardW - 10);
-    ctx.fillStyle = '#e4d1a4ee';
+    ctx.fillStyle = '#e6d2a6f0';
     ctx.beginPath();
     ctx.moveTo(px - 5, cardY + cardH - 0.5);
     ctx.lineTo(px, cardY + cardH + 6);
     ctx.lineTo(px + 5, cardY + cardH - 0.5);
     ctx.closePath();
     ctx.fill();
-    ctx.lineWidth = 1.1;
-    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = borderColor;
     ctx.stroke();
 
-    // 文字
-    ui.label(text, cardX + cardW / 2, cardY + cardH / 2 + 0.5, 9, textColor, 'center', ui.theme.fonts.title, cardW - 18);
     ctx.restore();
   }
 }
@@ -1664,6 +1693,8 @@ function npcHintType(npc, state) {
   if (npc.hintType && npc.hintType !== 'auto') return npc.hintType;
   // 自动推断：有未接任务 → task；营业地图 + roleId → merchant
   if (npc.roleId && innScene.isBusinessMap(state)) return 'merchant';
+  // v36：主线委托已完成且有可领彩头 → 头顶 ✨ 星标（不覆盖 task/merchant，仅靠近显示）
+  if (npc.artId && boons.hasClaimable(state, npc.artId)) return 'boon';
   return 'auto';
 }
 
@@ -1743,6 +1774,27 @@ function drawNpcHint(ui, item, camera, current, state) {
       ctx.arc(x, badgeY, arcR, -0.6, 0.6);
       ctx.stroke();
     }
+  } else if (hintType === 'boon') {
+    // 彩头星标：金色四角星（呼吸），低干扰、仅靠近显示
+    pulse = 0.85 + 0.15 * Math.sin(t * 3.5);
+    ctx.fillStyle = ui.theme.colors.gold;
+    var sp = 5.5 * pulse;
+    ctx.beginPath();
+    ctx.moveTo(x, badgeY - sp);
+    ctx.lineTo(x + sp * 0.28, badgeY - sp * 0.28);
+    ctx.lineTo(x + sp, badgeY);
+    ctx.lineTo(x + sp * 0.28, badgeY + sp * 0.28);
+    ctx.lineTo(x, badgeY + sp);
+    ctx.lineTo(x - sp * 0.28, badgeY + sp * 0.28);
+    ctx.lineTo(x - sp, badgeY);
+    ctx.lineTo(x - sp * 0.28, badgeY - sp * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    // 中心微亮点（提升辨识度）
+    ctx.fillStyle = ui.theme.colors.paper;
+    ctx.beginPath();
+    ctx.arc(x, badgeY, 1.2, 0, Math.PI * 2);
+    ctx.fill();
   } else {
     // 默认：金色空心环 + 省略号
     ctx.strokeStyle = ui.theme.colors.gold;

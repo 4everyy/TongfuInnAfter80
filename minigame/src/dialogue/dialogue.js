@@ -9,6 +9,7 @@ const branches = require('../inn/branches');
 const transport = require('../core/transport');
 const presentation = require('../../data/presentation');
 const commerce = require('../world/commerce');
+const boons = require('../../data/npc-signature-boon-v36');
 
 function open(state, id) {
   const definition = dialogues[id];
@@ -29,6 +30,7 @@ function open(state, id) {
       return Object.assign({}, choice, { label: content.identity.resolve(choice.label) });
     }),
   });
+  injectBoonChoices(state, id);
   return true;
 }
 
@@ -42,10 +44,45 @@ function stageAtLeast(state, roleId, stage) {
 }
 
 function applyReward(state, reward) {
+  var key;
   if (!reward) return;
   if (reward.coin) state.inventory.coin = Math.max(0, state.inventory.coin + reward.coin);
   if (reward.ingredient) innSystem.changeStock(state, { staple: reward.ingredient });
   if (reward.medicine) state.inventory.medicine = Math.max(0, state.inventory.medicine + reward.medicine);
+  // v36 彩头扩展：细分类库存 / 口碑 / 长期倾向 / 角色好感（沿用既有累加先例）
+  if (reward.stock) innSystem.changeStock(state, reward.stock);
+  if (reward.reputation) state.inn.reputation = Math.max(0, (state.inn.reputation || 0) + reward.reputation);
+  if (reward.tendency && state.campaign && state.campaign.tendencies) {
+    for (key in reward.tendency) {
+      if (state.campaign.tendencies[key] != null) state.campaign.tendencies[key] += reward.tendency[key];
+    }
+  }
+  if (reward.trust && state.relationships) {
+    for (key in reward.trust) {
+      if (state.relationships[key]) {
+        state.relationships[key].trust = Math.max(0, (state.relationships[key].trust || 0) + reward.trust[key]);
+      }
+    }
+  }
+}
+
+// v36 彩头：在"回头再见"对话（npcv26-<id>-repeat）里，按运行期状态注入可领彩头选项。
+// 彩头仅在 NPC 主线委托完成后出现，与 repeat 对话的可见条件一致；未触发时对话内容不变。
+function injectBoonChoices(state, id) {
+  var prefix = 'npcv26-';
+  var suffix = '-repeat';
+  var npcId;
+  var boonChoices;
+  var closeChoice;
+  if (!id || id.indexOf(prefix) !== 0 || id.length <= prefix.length + suffix.length) return;
+  if (id.indexOf(suffix) !== id.length - suffix.length) return;
+  npcId = id.slice(prefix.length, id.length - suffix.length);
+  boonChoices = boons.resolve(state, npcId);
+  if (!boonChoices.length || !state.dialogue || !state.dialogue.choices) return;
+  // 把彩头选项插在末尾的"回头再见/关闭"之前
+  closeChoice = state.dialogue.choices.length ? state.dialogue.choices.pop() : null;
+  boonChoices.forEach(function (choice) { state.dialogue.choices.push(choice); });
+  if (closeChoice) state.dialogue.choices.push(closeChoice);
 }
 
 function choose(state, index) {
@@ -65,6 +102,7 @@ function choose(state, index) {
   if (choice.action === 'shop') commerce.open(state, choice.shopId);
   if (choice.action === 'flag') state.toast = '任务状态已更新。';
   if (choice.action === 'reward') state.toast = choice.reward && choice.reward.coin < 0 ? '喝过热茶，精神好多了。' : '获得了一份补给。';
+  if (choice.action === 'boon') state.toast = choice.toast || '收下了一份彩头。';
   if (choice.action === 'caseEvidence') {
     if (choice.evidence) caseFiles.addEvidence(state, choice.evidence);
     state.toast = '线索已经记入证据簿。';

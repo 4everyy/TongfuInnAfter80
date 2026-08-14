@@ -7,6 +7,7 @@ const deep78 = require('./season1-deep-78');
 const season2 = require('./season2-ch910');
 const season2ch11 = require('./season2-ch11');
 const npcPopulationV26 = require('./npc-population-v26');
+const npcPopulationV37 = require('./npc-population-v37');
 const allMapAccessV27 = require('./all-map-access-v27');
 const sceneCalibrationV34 = require('./scene-calibration-v34');
 
@@ -684,6 +685,7 @@ Object.keys(season2.dialogues).forEach((id) => { dialogues[id] = season2.dialogu
 Object.keys(season2ch11.dialogues).forEach((id) => { dialogues[id] = season2ch11.dialogues[id]; });
 allMapAccessV27.apply(maps);
 npcPopulationV26.apply(maps, dialogues);
+npcPopulationV37.apply(maps, dialogues);
 sceneCalibrationV34.apply(maps);
 
 const battles = {

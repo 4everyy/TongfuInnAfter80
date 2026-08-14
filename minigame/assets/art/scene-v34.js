@@ -73,7 +73,12 @@ function apply(maps) {
       }
     });
     art.scenePackage = packageName;
-    art.characterScale = mapId === 'inn' || mapId === 'jiangnan_branch' ? 1.04 : 1;
+    // 客栈与江南分号作为枢纽内景，人物略大（1.04）；其余地图保留 manifest 显式声明的
+    // characterScale（如江淮香料工作坊、旧宴厨房的 1.08），缺省回退到 1。
+    // 注意：早期此处无条件覆盖为 1，导致 manifest 里为两张工作坊图写的 1.08 被静默丢弃。
+    art.characterScale = mapId === 'inn' || mapId === 'jiangnan_branch'
+      ? 1.04
+      : (Number(art.characterScale) > 1 ? Number(art.characterScale) : 1);
     art.hasPhaseLighting = false;
     art.v34 = true;
   });

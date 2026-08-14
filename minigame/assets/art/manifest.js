@@ -2,6 +2,7 @@ const FRAME_SIZE = { width: 192, height: 256 };
 const sceneV23 = require('./scene-v23');
 const sceneV34 = require('./scene-v34');
 const npcPopulationV26 = require('../../data/npc-population-v26');
+const npcPopulationV37 = require('../../data/npc-population-v37');
 const PIVOT = { x: 96, y: 244 };
 const CLIPS = {
   idle: [0, 1, 2, 3],
@@ -318,6 +319,7 @@ const manifest = {
 
 sceneV23.apply(manifest.maps);
 npcPopulationV26.applyArt(manifest.npcs, manifest.maps);
+npcPopulationV37.applyArt(manifest.npcs, manifest.maps);
 sceneV34.apply(manifest.maps);
 
 module.exports = manifest;
