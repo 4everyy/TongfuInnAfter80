@@ -6,7 +6,7 @@ var branches = require('../minigame/src/inn/branches');
 var transport = require('../minigame/src/core/transport');
 
 var state = store.freshState();
-assert.strictEqual(state.version, 10);
+assert.strictEqual(state.version, 11);
 assert.strictEqual(state.activeBranchId, 'changfeng');
 state.flags['season-1-complete'] = true;
 state.characters.wuchen.recruited = true;
@@ -73,11 +73,11 @@ var v9 = store.normalize({
   inn: { day: 57, reputation: 21, order: 77, menu: ['noodles'], upgrades: [] },
   campaign: { season: 2, chapter: 9, chapterDay: 1, gameDay: 57, completed: ['chapter-08'], tendencies: {}, seasonRatings: { 'season-1': { grade: 'A' } } },
 });
-assert.strictEqual(v9.version, 10, 'v9未迁移至v10');
+assert.strictEqual(v9.version, 11, 'v9未迁移至v11');
 assert(v9.flags['season-1-complete'], 'v9迁移丢失第一季旗标');
 assert(v9.characters.wuchen.recruited, 'v9迁移丢失角色状态');
 assert.strictEqual(v9.inventory.coin, 99, 'v9迁移丢失银两');
 assert.strictEqual(v9.branches.changfeng.inn.reputation, 21, 'v9客栈未迁入总店');
 assert.strictEqual(v9.branches.changfeng.stock.staple, 5, 'v9库存未迁入总店');
 
-console.log('Branch v10 validation passed: migration, isolation, transport and weather delay.');
+console.log('Branch compatibility validation passed: v11 migration, isolation, transport and weather delay.');

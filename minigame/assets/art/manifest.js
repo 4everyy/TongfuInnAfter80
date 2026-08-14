@@ -61,6 +61,9 @@ function directional(side, front, back) {
 
 const manifest = {
   root: 'assets/art/',
+  board: {
+    background: 'board/wuxia-world-v3.jpg',
+  },
   ui: {
     presentation: {
       dialogue: 'ui/presentation/dialogue-frame-v29.webp',

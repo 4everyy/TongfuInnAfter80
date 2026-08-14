@@ -81,19 +81,25 @@ function boot(name, options) {
 }
 
 try {
-  boot('modern API', { modern: true });
+  const modern = boot('modern API', { modern: true });
+  const startTouch = { identifier: 1, clientX: 210, clientY: 260 };
+  modern.handlers.start({ changedTouches: [startTouch] });
+  modern.handlers.end({ changedTouches: [startTouch] });
+  assert(modern.storage['dengxia-rpg-save-v11'], 'new board save was not created');
+  assert.strictEqual(modern.storage['dengxia-rpg-save-v11'].screen, 'board', 'start entry did not open the board');
+  assert.strictEqual(modern.storage['dengxia-rpg-save-v11'].board.tileId, 'r0-0', 'board did not start at the inn');
   boot('legacy API fallback', { modern: false });
   const corrupted = boot('corrupt save recovery', {
     modern: true,
     storage: { 'dengxia-rpg-save-v10': '{broken-json' },
   });
-  assert(corrupted.storage['dengxia-rpg-recovery-v10'], 'corrupt save was not backed up');
+  assert(corrupted.storage['dengxia-rpg-recovery-v11'], 'corrupt save was not backed up');
   const fatal = boot('fatal bootstrap screen', { modern: true, failFirstCanvas: true });
   assert(fatal.counter.text > 0, 'fatal bootstrap screen did not draw diagnostic text');
   const fatalAfterCanvas = boot('fatal after screen canvas', { modern: true, failAppInit: true });
   assert.strictEqual(fatalAfterCanvas.counter.canvasCalls, 1, 'fatal screen must reuse the visible screen canvas');
   assert(fatalAfterCanvas.counter.text > 0, 'same-canvas fatal screen did not draw diagnostic text');
-  console.log('WeChat startup smoke test passed: modern, legacy, corrupt save, fatal screens.');
+  console.log('WeChat startup smoke test passed: title-to-board, modern, legacy, corrupt save, fatal screens.');
 } finally {
   global.setInterval = originalSetInterval;
   delete global.wx;

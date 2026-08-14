@@ -3,6 +3,7 @@ var createAssetStore = require('./assets').createAssetStore;
 var theme = require('./theme').theme;
 var layoutModule = require('./layout');
 var drawTitle = require('./views/title').drawTitle;
+var drawBoard = require('./views/board').drawBoard;
 var drawExplore = require('./views/explore').drawExplore;
 var drawManagement = require('./views/management-v12').drawManagement;
 var drawManagementOverlay = require('./views/management-v12').drawManagementOverlay;
@@ -426,6 +427,19 @@ function createRenderer(canvas) {
       paths = paths.concat(assets.rolePaths('zhangdeng', ['portrait']));
       return unique(paths);
     }
+    if (state.screen === 'board' && !state.battle) {
+      ['zhangdeng', 'wuchen', 'jingzhi', 'wenyan', 'shiwei'].forEach(function (id) {
+        if (id !== 'zhangdeng' && (!state.characters[id] || (!state.characters[id].recruited && !state.characters[id].temporary))) return;
+        paths = paths.concat(assets.rolePaths(id, ['portrait', 'atlases']));
+      });
+      paths = paths.concat(assets.npcPaths('herbalist-qiu'));
+      paths = paths.concat(assets.npcPaths('mazhuozi'));
+      if (state.board && state.board.encounter && state.board.encounter.npcId) {
+        paths = paths.concat(assets.npcPaths(state.board.encounter.npcId));
+      }
+      paths = paths.concat(assets.uiPaths());
+      return unique(paths);
+    }
     if (state.screen === 'inn') {
       paths = paths.concat(assets.mapPaths(state.activeBranchId === 'jiangnan' ? 'jiangnan_branch' : 'inn', {
         phase: state.calendar && state.calendar.phase || 'morning',
@@ -554,6 +568,13 @@ function createRenderer(canvas) {
     var key;
     var phase;
     var weather;
+    if (state && state.screen === 'board') {
+      key = 'board|' + String(state.board && state.board.phase || 'morning');
+      if (key === prefetchKey) return;
+      prefetchKey = key;
+      assets.preload(assets.boardPaths().concat(assets.uiPaths()));
+      return;
+    }
     if (!state || state.screen !== 'explore' || !state.mapId) return;
     current = mapById(state.mapId);
     phase = state.worldTime && state.worldTime.phase || 'morning';
@@ -637,7 +658,7 @@ function createRenderer(canvas) {
     var names = { coin: '银', ingredient: '食', reputation: '口碑', order: '秩序' };
     var right = layout.width - (layout.safe ? layout.safe.capsuleRight : 14);
     var targets = { coin: right - 158, ingredient: right - 112, reputation: right - 58, order: right - 14 };
-    var sourceX = state.battle ? layout.width / 2 : state.screen === 'inn' ? 650 : 245;
+    var sourceX = state.battle ? layout.width / 2 : state.screen === 'inn' ? 650 : state.screen === 'board' ? layout.width / 2 : 245;
     var sourceY = state.battle ? 250 : 180;
     var index;
     var key;
@@ -773,7 +794,11 @@ function createRenderer(canvas) {
       frameNow = now;
       lastState = state;
       resize();
-      updatePhaseTransition(state.screen === 'explore' && state.worldTime ? state.worldTime.phase : state.calendar && state.calendar.phase || 'morning', now);
+      updatePhaseTransition(state.screen === 'board' && state.board
+        ? state.board.phase
+        : state.screen === 'explore' && state.worldTime
+          ? state.worldTime.phase
+          : state.calendar && state.calendar.phase || 'morning', now);
       if (state.screen === 'inn' || state.innScene && state.innScene.activePage) {
         updatePageTransition(state.innScene && state.innScene.activePage || state.managementView || 'scene', now);
       }
@@ -785,6 +810,10 @@ function createRenderer(canvas) {
       if (state.screen === 'title') drawTitle(view, state);
       else if (state.screen === 'chapter001') drawChapter001(view, state);
       else if (state.battle) drawBattle(view, state);
+      else if (state.screen === 'board') {
+        drawBoard(view, state);
+        drawOverlays(view, state);
+      }
       else if (state.screen === 'inn') {
         drawManagement(view, state);
         drawOverlays(view, state);

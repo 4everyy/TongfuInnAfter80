@@ -16,7 +16,7 @@ Math.random = () => 0;
 
 try {
   const state = store.freshState();
-  assert(state.version === 10, '新档不是v10');
+  assert(state.version === 11, '新档不是v11');
   assert(state.protagonist === 'zhangdeng' && state.activeId === 'zhangdeng', '柳掌灯不是固定探索主角');
   assert(state.party.length === 1 && state.party[0] === 'zhangdeng', '新档不是柳掌灯单人队伍');
   assert(!state.characters.wuchen.innUnlocked, '谢无尘在相遇前已经参与经营');

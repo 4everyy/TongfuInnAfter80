@@ -5,6 +5,7 @@ var campaign = require('../core/campaign');
 var caseFiles = require('../core/case-files');
 var presentation = require('../../data/presentation');
 var commerce = require('../world/commerce');
+var boardSystem = require('../board/board');
 
 var roles = content.roles;
 var battles = content.battles;
@@ -699,6 +700,11 @@ function finish(state) {
 function lose(state) {
   if (state.battle) clearEnemyTimer(state.battle);
   state.battle = null;
+  if (state.board && state.board.external && state.board.external.type === 'battle') {
+    boardSystem.completeExternal(state, 'battle', false);
+    state.toast = '战斗失利，队伍退回商路棋格休整。';
+    return;
+  }
   if (state.activeBranchId === 'jiangnan') {
     world.spawn(state, 'jiangnan_branch', 'recovery', '战斗失利，先回水巷分店休整。');
     world.syncQuest(state);

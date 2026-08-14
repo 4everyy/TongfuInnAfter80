@@ -21,7 +21,7 @@ assert(content.maps.some((map) => map.id === 'old_banquet_kitchen'), '缺少百�
 
 const titleSource = fs.readFileSync(path.join(root, 'minigame/src/render/views/title.js'), 'utf8');
 assert((titleSource.match(/ui\.addButton/g) || []).length === 1, '首页必须只有一个可点击主入口');
-assert(titleSource.includes('开始游戏'), '首页缺少“开始游戏”主入口');
+assert(titleSource.includes('开始棋局') && titleSource.includes("type: 'startAdventure'"), '首页缺少“开始棋局”主入口');
 assert(!titleSource.includes('客栈经营') && !titleSource.includes('开发档案'), '首页仍包含旧入口文案');
 
 const state = store.freshState();

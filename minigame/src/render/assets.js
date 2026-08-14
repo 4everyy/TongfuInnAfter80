@@ -164,11 +164,17 @@ function createAssetStore() {
     ]));
   }
 
+  function boardPaths() {
+    const board = manifest.board || {};
+    return unique(Object.keys(board).map((id) => board[id]));
+  }
+
   function allPaths() {
     const paths = [];
     Object.keys(manifest.maps).forEach((id) => paths.push.apply(paths, mapPaths(id)));
     Object.keys(manifest.characters).forEach((id) => paths.push.apply(paths, rolePaths(id)));
     Object.keys(manifest.npcs || {}).forEach((id) => paths.push.apply(paths, npcPaths(id)));
+    paths.push.apply(paths, boardPaths());
     paths.push.apply(paths, uiPaths());
     return unique(paths);
   }
@@ -232,6 +238,7 @@ function createAssetStore() {
     mapPaths,
     rolePaths,
     npcPaths,
+    boardPaths,
     uiPaths,
     allPaths,
     preload,

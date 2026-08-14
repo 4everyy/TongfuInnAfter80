@@ -9,11 +9,12 @@ const transport = require('./transport');
 const cookingTrials = require('../inn/cooking-trials');
 const innScene = require('../inn/scene-interactions');
 const commerce = require('../world/commerce');
+const boardSystem = require('../board/board');
 
-const VERSION = 10;
-const KEY = 'dengxia-rpg-save-v10';
-const RECOVERY_KEY = 'dengxia-rpg-recovery-v10';
-const LEGACY_KEYS = ['dengxia-rpg-save-v9', 'tongfu-rpg-save-v8', 'tongfu-rpg-save-v7', 'tongfu-rpg-save-v6', 'tongfu-rpg-save-v5', 'tongfu-rpg-save-v4', 'tongfu-rpg-save-v3'];
+const VERSION = 11;
+const KEY = 'dengxia-rpg-save-v11';
+const RECOVERY_KEY = 'dengxia-rpg-recovery-v11';
+const LEGACY_KEYS = ['dengxia-rpg-save-v10', 'dengxia-rpg-save-v9', 'tongfu-rpg-save-v8', 'tongfu-rpg-save-v7', 'tongfu-rpg-save-v6', 'tongfu-rpg-save-v5', 'tongfu-rpg-save-v4', 'tongfu-rpg-save-v3'];
 const LEGACY_MAP_WIDTHS = {
   inn: 1800,
   yard: 1500,
@@ -149,6 +150,7 @@ function freshState() {
     modal: null,
     dialogue: null,
     battle: null,
+    board: boardSystem.fresh(),
     managementEvent: null,
     managementPage: 'today',
     managementView: 'scene',
@@ -179,6 +181,7 @@ function freshState() {
   cookingTrials.ensure(state);
   innScene.ensure(state);
   commerce.ensure(state);
+  boardSystem.ensure(state);
   return state;
 }
 
@@ -193,6 +196,7 @@ function normalize(saved) {
   if (typeof saved === 'string') saved = JSON.parse(saved);
   if (!saved || typeof saved !== 'object' || Array.isArray(saved)) throw new Error('存档根节点格式无效');
   const base = freshState();
+  const sourceVersion = Number(saved.version) || 0;
   const next = Object.assign(base, saved || {});
   const migratingLegacy = !saved.version || saved.version < 9;
   const migratingV9 = Number(saved.version) === 9;
@@ -253,6 +257,9 @@ function normalize(saved) {
   next.commerce = Object.assign({}, base.commerce, saved && saved.commerce);
   next.commerce.owned = Object.assign({}, base.commerce.owned, next.commerce.owned || {});
   next.commerce.dailyPurchases = Object.assign({}, base.commerce.dailyPurchases, next.commerce.dailyPurchases || {});
+  next.board = saved && saved.board && typeof saved.board === 'object'
+    ? Object.assign(boardSystem.fresh(), saved.board)
+    : boardSystem.fresh();
   next.cookingTrial = saved && saved.cookingTrial && typeof saved.cookingTrial === 'object'
     ? Object.assign({}, saved.cookingTrial)
     : null;
@@ -322,6 +329,32 @@ function normalize(saved) {
   transport.ensure(next);
   cookingTrials.ensure(next);
   commerce.ensure(next);
+  boardSystem.ensure(next);
+  if (sourceVersion === VERSION && next.board.external && next.board.external.type === 'battle') {
+    next.board.encounter = {
+      type: 'battle',
+      title: '未竟的护路战',
+      tileId: next.board.external.tileId,
+      battleId: next.board.external.battleId,
+      text: '上次退出时战斗尚未结束，可以重新整队迎战或暂时绕行。',
+    };
+    next.board.external = null;
+    next.screen = 'board';
+    next.mode = 'board';
+  }
+  if (sourceVersion < VERSION) {
+    boardSystem.placeFromMap(next, next.mapId);
+    next.board.started = true;
+    next.board.external = null;
+    next.board.inLandmark = null;
+    next.screen = 'board';
+    next.mode = 'board';
+    next.innScene.selectedObjectId = null;
+    next.innScene.activePage = null;
+    next.innScene.microGame = null;
+    next.innScene.serviceOpen = false;
+    next.toast = '旧旅程已迁入九域商路棋盘，原有角色、资源与地图记录均已保留。';
+  }
   if (next.cookingTrial && !next.cookingTrial.completed) next.modal = { type: 'cookingTrial' };
   next.mapVariants.phase = next.worldTime.phase;
   return next;

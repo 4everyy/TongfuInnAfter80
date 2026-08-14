@@ -134,8 +134,8 @@ assert(serviceState.calendar.phase === 'evening' && serviceState.service.complet
   'Three service rounds must complete once and advance to evening.');
 
 const legacy = store.normalize({ version: 10, screen: 'inn', mapId: 'inn', innScene: { activePage: 'kitchen' } });
-assert(legacy.screen === 'explore' && legacy.mode === 'explore', 'Legacy inn screen must migrate to live exploration.');
-assert(legacy.innScene.activePage === 'kitchen', 'Legacy complex page must be restored as an overlay.');
+assert(legacy.screen === 'board' && legacy.mode === 'board', 'Legacy inn screen must migrate to the trade-route board.');
+assert(legacy.innScene.activePage === null, 'Legacy complex page must close during board migration.');
 
 console.log('Inn interactions v18 validation passed: 27 maps, ' + linkedCount
   + ' explicit story links, unique action ownership, distance gating, service routing, microgame idempotency and legacy migration.');

@@ -13,6 +13,7 @@ const identity = require('../data/identity');
 const cookingTrials = require('./inn/cooking-trials');
 const innScene = require('./inn/scene-interactions');
 const commerce = require('./world/commerce');
+const boardSystem = require('./board/board');
 
 function createGame(screenCanvas) {
   const canvas = screenCanvas || wx.createCanvas();
@@ -24,6 +25,7 @@ function createGame(screenCanvas) {
   inn.ensure(state);
   innScene.ensure(state);
   campaign.ensure(state);
+  boardSystem.ensure(state);
   world.syncQuest(state);
 
   function interact(targetId) {
@@ -89,12 +91,24 @@ function createGame(screenCanvas) {
     if (action.type === 'startAdventure') {
       state = freshState();
       campaign.ensure(state);
-      state.screen = 'explore';
-      state.mode = 'explore';
-      state.protagonist = 'zhangdeng';
-      state.activeId = 'zhangdeng';
-      state.explorationContext = { source: 'title', purpose: 'free', returnMapId: 'inn', advancesTimeOnReturn: true };
-      world.spawn(state, 'inn', 'recovery', identity.roleName('zhangdeng') + '决定亲自看看，客栈内外都可能藏着新故事。');
+      boardSystem.start(state);
+    }
+    const boardResult = boardSystem.dispatch(state, action);
+    if (boardResult && boardResult.kind === 'landmark') {
+      state.explorationContext = {
+        source: 'board',
+        purpose: 'landmark',
+        returnMapId: boardResult.mapId,
+        advancesTimeOnReturn: false,
+      };
+      world.spawn(state, boardResult.mapId, 'main', '进入地标调查；可随时返回商路棋盘。');
+    }
+    if (boardResult && boardResult.kind === 'battle') {
+      if (!combat.start(state, boardResult.battleId)) boardSystem.completeExternal(state, 'battle', false);
+    }
+    if (boardResult && boardResult.kind === 'return-board') {
+      boardSystem.completeExternal(state, 'landmark', true);
+      state.explorationContext = null;
     }
     chapter001.dispatch(state, action);
     if (action.type === 'crisisAction') doorwayCrisis.interact(state, action.id);
@@ -174,7 +188,11 @@ function createGame(screenCanvas) {
     if (action.type === 'battleSkipSettlement' && state.battle && state.battle.result) {
       state.battle.result.startedAt = Date.now() - 1200;
     }
-    if (action.type === 'battleContinue') combat.finish(state);
+    if (action.type === 'battleContinue') {
+      const returningToBoard = !!(state.board && state.board.external && state.board.external.type === 'battle');
+      const finished = combat.finish(state);
+      if (finished && returningToBoard) boardSystem.completeExternal(state, 'battle', true);
+    }
     save(state);
     renderer.render(state);
   }
@@ -222,7 +240,10 @@ function createGame(screenCanvas) {
         && !(state.innScene && (state.innScene.activePage || state.innScene.microGame || state.innScene.serviceOpen))
         && !state.managementEvent
       ) world.update(state, controls, 1 / 30);
-      else state.moving = false;
+      else if (state.screen === 'board' && !state.battle && !state.modal && !state.dialogue) {
+        if (boardSystem.update(state, Date.now())) save(state);
+        state.moving = false;
+      } else state.moving = false;
       renderer.render(state);
     } catch (error) {
       state.moving = false;

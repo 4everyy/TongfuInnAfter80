@@ -2209,7 +2209,9 @@ function drawExplore(ui, state) {
   drawCrisisActions(ui, state);
   if (!innUiOpen) {
     drawJoystick(ui);
-    if (!innScene.isBusinessMap(state)) {
+    if (state.board && state.board.inLandmark) {
+      drawWoodControl(ui, { type: 'boardReturn' }, viewportWidth - 100, ui.height - 40, 48, 'exit', '棋盘', false, true);
+    } else if (!innScene.isBusinessMap(state)) {
       drawWoodControl(ui, { type: 'party' }, viewportWidth - 100, ui.height - 40, 48, 'party', '队伍', false, true);
     }
     if (freeHot) {
