@@ -1,0 +1,22 @@
+{
+  "name": "tongfu-inn-after-80",
+  "version": "0.1.0",
+  "private": true,
+  "description": "《武林外传》背景 2.5D 客栈模拟经营微信小游戏（纯 TS + Canvas 自研轻量引擎）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run extract && tsc --noEmit && vite build && npm run pack:minigame",
+    "build:h5": "npm run extract && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "extract": "node tools/extract-chapters.mjs",
+    "typecheck": "tsc --noEmit",
+    "pack:minigame": "node tools/pack-minigame.mjs",
+    "qa:glance": "node tools/qa-glance.mjs"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
